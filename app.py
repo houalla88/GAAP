@@ -70,7 +70,7 @@ def main():
     load_dotenv()
 
 
-    st.set_page_config(page_title="Chat with multiple PDFs",page_icon=":books:")
+    st.set_page_config(page_title="Interrogez le projet",page_icon=":books:")
 
     st.write(css, unsafe_allow_html=True)
 
@@ -81,16 +81,16 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
 
-    st.header("Chat with multiple PDFs :books:")
+    st.header("Vérifier la conformité :books:")
 
-    user_question = st.text_input("Ask a question about your documents:")
+    user_question = st.text_input("Prosez des questions sur le motivation de la decision:")
 
     if user_question:
         handle_userinput(user_question)
 
     with st.sidebar: #pour mettre des choses dans le sidebar @dataoptimization comment 
         st.subheader("your document")
-        pdf_doc = st.file_uploader("uploard your document and click onon 'process'", accept_multiple_files=True)
+        pdf_doc = st.file_uploader("Charger le projet et les critères de selection, appuyer sur 'process'", accept_multiple_files=True)
         if st.button("Process"): 
             st.spinner("Processing")
             # cherger les fichier PDF
@@ -106,7 +106,6 @@ def main():
 
             st.session_state.conversation = get_conversation_chain(
                     vectorstore)
-
 
 
 if __name__ == '__main__':
