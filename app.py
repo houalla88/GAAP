@@ -69,8 +69,7 @@ def main():
 
     load_dotenv()
 
-
-    st.set_page_config(page_title="Interrogez le projet",page_icon=":books:")
+    st.set_page_config(page_title="Interrogez le projet",page_icon=":mag:")
 
     st.write(css, unsafe_allow_html=True)
 
@@ -81,9 +80,9 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
 
-    st.header("Vérifier la conformité :books:")
+    st.header("Vérifier la conformité du projet :mag:")
 
-    user_question = st.text_input("Prosez des questions sur le motivation de la decision:")
+    user_question = st.text_input("exemple:Prosez des questions sur le motivation de la decision:")
 
     if user_question:
         handle_userinput(user_question)
