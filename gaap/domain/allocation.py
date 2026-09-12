@@ -63,30 +63,35 @@ class Assignment:
     """Decision d'affectation, telle qu'elle doit etre retournee au moteur de prix."""
 
     experiment_key: str
-    subject_id: str
+    unit_id: str
     outcome: AllocationOutcome
     cell_key: str
-    rate: float
-    fee: float
+    price: float
+    pack_discount: float
     bucket: float
     in_analysis: bool
     reason: str = ""
 
+    @property
+    def effective_price(self) -> float:
+        return self.price - self.pack_discount
+
     def to_dict(self) -> dict:
         return {
             "experiment": self.experiment_key,
-            "subject_id": self.subject_id,
+            "unit_id": self.unit_id,
             "outcome": self.outcome.value,
             "cell": self.cell_key,
-            "rate": self.rate,
-            "fee": self.fee,
+            "price": self.price,
+            "pack_discount": self.pack_discount,
+            "effective_price": self.effective_price,
             "bucket": round(self.bucket, 12),
             "in_analysis": self.in_analysis,
             "reason": self.reason,
         }
 
 
-def uniform_bucket(salt: str, namespace: str, subject_id: str) -> float:
+def uniform_bucket(salt: str, namespace: str, unit_id: str) -> float:
     """Tirage uniforme et reproductible dans [0, 1).
 
     Le `namespace` separe les flux aleatoires d'une meme experience : le tirage
@@ -94,7 +99,7 @@ def uniform_bucket(salt: str, namespace: str, subject_id: str) -> float:
     cellule, faute de quoi le temoin serait correle au prix - un biais discret
     et redoutable, car il ne se voit pas dans les totaux.
     """
-    digest = hashlib.sha256(f"{salt}|{namespace}|{subject_id}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{salt}|{namespace}|{unit_id}".encode("utf-8")).digest()
     return int.from_bytes(digest[:8], "big") / _UINT64
 
 
@@ -116,11 +121,11 @@ def _pick_cell(cells: tuple[PriceCell, ...], bucket: float) -> PriceCell:
 
 def assign(
     experiment: Experiment,
-    subject_id: str,
+    unit_id: str,
     segment: str = "",
     enforce_status: bool = True,
 ) -> Assignment:
-    """Affecte un sujet et retourne le prix a servir.
+    """Affecte une unite et retourne le prix a servir.
 
     Ordre des controles, du plus contraignant au moins contraignant. Cet ordre
     est significatif : une exclusion de segment prime toujours sur le tirage
@@ -132,11 +137,11 @@ def assign(
     def fallback(outcome: AllocationOutcome, reason: str) -> Assignment:
         return Assignment(
             experiment_key=experiment.key,
-            subject_id=subject_id,
+            unit_id=unit_id,
             outcome=outcome,
             cell_key=control.key,
-            rate=control.rate,
-            fee=control.fee,
+            price=control.price,
+            pack_discount=control.pack_discount,
             bucket=0.0,
             in_analysis=False,
             reason=reason,
@@ -149,32 +154,32 @@ def assign(
         return fallback(AllocationOutcome.EXCLUDED, f"Segment '{segment}' exclu du test par garde-fou.")
 
     if experiment.targeting and segment not in experiment.targeting:
-        return fallback(AllocationOutcome.NOT_TARGETED, "Sujet hors du perimetre cible.")
+        return fallback(AllocationOutcome.NOT_TARGETED, "Unite hors du perimetre cible.")
 
     if experiment.holdout_share > 0:
-        holdout_bucket = uniform_bucket(experiment.salt, "holdout", subject_id)
+        holdout_bucket = uniform_bucket(experiment.salt, "holdout", unit_id)
         if holdout_bucket < experiment.holdout_share:
             return Assignment(
                 experiment_key=experiment.key,
-                subject_id=subject_id,
+                unit_id=unit_id,
                 outcome=AllocationOutcome.HOLDOUT,
                 cell_key=control.key,
-                rate=control.rate,
-                fee=control.fee,
+                price=control.price,
+                pack_discount=control.pack_discount,
                 bucket=holdout_bucket,
                 in_analysis=False,
                 reason="Temoin preserve : sert de reference longue, hors analyse courante.",
             )
 
-    bucket = uniform_bucket(experiment.salt, "cell", subject_id)
+    bucket = uniform_bucket(experiment.salt, "cell", unit_id)
     cell = _pick_cell(experiment.cells, bucket)
     return Assignment(
         experiment_key=experiment.key,
-        subject_id=subject_id,
+        unit_id=unit_id,
         outcome=AllocationOutcome.ASSIGNED,
         cell_key=cell.key,
-        rate=cell.rate,
-        fee=cell.fee,
+        price=cell.price,
+        pack_discount=cell.pack_discount,
         bucket=bucket,
         in_analysis=True,
     )
@@ -184,7 +189,7 @@ def allocation_profile(experiment: Experiment, sample_size: int = 20_000) -> dic
     """Profil d'allocation simule sur des identifiants synthetiques.
 
     Sert au controle avant lancement : si la repartition simulee s'ecarte des
-    poids demandes, le probleme est dans le plan, pas dans le trafic. Verifier
+    poids demandes, le probleme est dans le plan, pas dans le flux. Verifier
     l'allocation avant de l'accuser est la premiere regle du diagnostic SRM.
     """
     counts = {cell.key: 0 for cell in experiment.cells}

@@ -92,22 +92,22 @@ class DailyPoint:
 
     day: str
     cell_key: str
-    exposed: int
-    conversions: int
+    presented: int
+    sold: int
 
     @property
-    def take_up(self) -> float:
-        return self.conversions / self.exposed if self.exposed else 0.0
+    def sell_through(self) -> float:
+        return self.sold / self.presented if self.presented else 0.0
 
 
 class ObservationRepository:
-    """Persistance et agregation des leads exposes."""
+    """Persistance et agregation des kilos mis en rayon."""
 
     def __init__(self, conn: sqlite3.Connection) -> None:
         self._conn = conn
 
     def record_many(self, rows: list[tuple]) -> int:
-        """Insere en lot. Les doublons (experience, sujet) sont ignores.
+        """Insere en lot. Les doublons (experience, unite) sont ignores.
 
         `INSERT OR IGNORE` plutot qu'une verification prealable : l'unicite est
         garantie par la contrainte de schema, pas par une lecture applicative
@@ -116,8 +116,8 @@ class ObservationRepository:
         cursor = self._conn.executemany(
             """
             INSERT OR IGNORE INTO observations
-                (experiment_key, subject_id, cell_key, converted, pd, principal, segment, observed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (experiment_key, unit_id, cell_key, sold, quality_index, segment, observed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             rows,
         )
@@ -128,17 +128,18 @@ class ObservationRepository:
         """Agregats par cellule, calcules integralement par la base.
 
         Les sommes de carres conditionnelles evitent un second passage sur les
-        donnees pour obtenir les variances de PD.
+        donnees pour obtenir les variances de l'indice de fraîcheur.
         """
         rows = self._conn.execute(
             """
             SELECT cell_key,
-                   COUNT(*)                                   AS exposed,
-                   SUM(converted)                             AS conversions,
-                   SUM(pd)                                    AS pd_sum,
-                   SUM(pd * pd)                               AS pd_sq_sum,
-                   SUM(CASE WHEN converted = 1 THEN pd ELSE 0 END)      AS pd_sum_conv,
-                   SUM(CASE WHEN converted = 1 THEN pd * pd ELSE 0 END) AS pd_sq_sum_conv
+                   COUNT(*)                                          AS presented,
+                   SUM(sold)                                         AS sold,
+                   SUM(quality_index)                                AS q_sum,
+                   SUM(quality_index * quality_index)                AS q_sq_sum,
+                   SUM(CASE WHEN sold = 1 THEN quality_index ELSE 0 END)  AS q_sum_sold,
+                   SUM(CASE WHEN sold = 1 THEN quality_index * quality_index ELSE 0 END)
+                                                                     AS q_sq_sum_sold
             FROM observations
             WHERE experiment_key = ?
             GROUP BY cell_key
@@ -148,12 +149,12 @@ class ObservationRepository:
         return [
             CellAggregate(
                 cell_key=r["cell_key"],
-                exposed=r["exposed"],
-                conversions=r["conversions"] or 0,
-                pd_sum_exposed=r["pd_sum"] or 0.0,
-                pd_sq_sum_exposed=r["pd_sq_sum"] or 0.0,
-                pd_sum_converted=r["pd_sum_conv"] or 0.0,
-                pd_sq_sum_converted=r["pd_sq_sum_conv"] or 0.0,
+                presented=r["presented"],
+                sold=r["sold"] or 0,
+                quality_sum_presented=r["q_sum"] or 0.0,
+                quality_sq_sum_presented=r["q_sq_sum"] or 0.0,
+                quality_sum_sold=r["q_sum_sold"] or 0.0,
+                quality_sq_sum_sold=r["q_sq_sum_sold"] or 0.0,
             )
             for r in rows
         ]
@@ -162,7 +163,7 @@ class ObservationRepository:
         rows = self._conn.execute(
             """
             SELECT substr(observed_at, 1, 10) AS day, cell_key,
-                   COUNT(*) AS exposed, SUM(converted) AS conversions
+                   COUNT(*) AS presented, SUM(sold) AS sold
             FROM observations
             WHERE experiment_key = ?
             GROUP BY day, cell_key
@@ -170,10 +171,10 @@ class ObservationRepository:
             """,
             (experiment_key,),
         ).fetchall()
-        return [DailyPoint(r["day"], r["cell_key"], r["exposed"], r["conversions"] or 0)
+        return [DailyPoint(r["day"], r["cell_key"], r["presented"], r["sold"] or 0)
                 for r in rows]
 
-    def total_exposed(self, experiment_key: str) -> int:
+    def total_presented(self, experiment_key: str) -> int:
         row = self._conn.execute(
             "SELECT COUNT(*) AS n FROM observations WHERE experiment_key = ?", (experiment_key,)
         ).fetchone()

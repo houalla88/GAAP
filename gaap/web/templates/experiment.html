@@ -78,7 +78,7 @@
           Probabilite que la cellule retenue rapporte davantage :
           {{ (recommendation.confidence * 100) | round(1) }} % ·
           impact {{ recommendation.impact_per_basis | eur_signed(0) }} pour
-          {{ recommendation.impact_basis | num }} leads exposes
+          {{ recommendation.impact_basis | num }} kilos presentes
         </span>
       </div>
     </div>
@@ -88,16 +88,18 @@
       <header>
         <h2>Ou passe le prix</h2>
         <span class="hint">
-          Le plancher se decompose en quatre postes ; seule la fraction violette au-dessus
-          est disponible pour remunerer le risque pris par l'actionnaire.
+          Le plancher se decompose en cinq postes ; seule la fraction violette au-dessus est
+          disponible pour remunerer le risque pris en presentant la marchandise. Il est
+          recalcule plus bas a la rotation observee de chaque cellule.
         </span>
       </header>
       {{ ladder }}
       <div class="legend">
-        <span class="item"><span class="swatch sw-1"></span>Refinancement</span>
-        <span class="item"><span class="swatch sw-2"></span>Couts operationnels</span>
-        <span class="item"><span class="swatch sw-3"></span>Perte attendue (PD x LGD)</span>
-        <span class="item"><span class="swatch sw-4"></span>Charge en capital</span>
+        <span class="item"><span class="swatch sw-1"></span>Achat</span>
+        <span class="item"><span class="swatch sw-2"></span>Logistique et froid</span>
+        <span class="item"><span class="swatch sw-3"></span>Manutention</span>
+        <span class="item"><span class="swatch sw-4"></span>Perte attendue sur invendus</span>
+        <span class="item"><span class="swatch sw-5"></span>Immobilisation du stock</span>
         <span class="item"><span class="swatch sw-margin"></span>Marge disponible</span>
       </div>
     </div>
@@ -113,12 +115,13 @@
           <thead>
             <tr>
               <th>Cellule</th>
-              <th class="n">Exposes</th>
-              <th class="n">Take-up</th>
-              <th class="n">IC take-up</th>
-              <th class="n">Marge</th>
-              <th class="n">RAROC</th>
-              <th class="n">EUR / lead</th>
+              <th class="n">Kilos</th>
+              <th class="n">Ecoulement</th>
+              <th class="n">IC ecoulement</th>
+              <th class="n">Casse</th>
+              <th class="n">Plancher obs.</th>
+              <th class="n">Marge / kg vendu</th>
+              <th class="n">EUR / kg presente</th>
               <th class="n">Ecart</th>
               <th class="n">t</th>
               <th class="n">P(rapporte +)</th>
@@ -132,37 +135,39 @@
                   <span class="cell-name">
                     <strong>{{ result.cell.label }}</strong>
                     <span class="sub">
-                      {% if result.is_control %}reference{% else %}{{ result.delta_bp | bp }}{% endif %}
-                      {% if result.cell.fee %} · frais {{ result.cell.fee | eur }}{% endif %}
-                      · effectif {{ result.effective_rate | pct }}
+                      {% if result.is_control %}reference{% else %}{{ result.delta_cents | cents }}{% endif %}
+                      {% if result.cell.pack_discount %} · remise lot {{ result.cell.pack_discount | eur(2) }}{% endif %}
+                      · effectif {{ result.effective_price | kg }}
                     </span>
                   </span>
                 </td>
-                <td class="n">{{ result.exposed | num }}</td>
-                <td class="n strong">{{ result.take_up | pct }}</td>
-                <td class="n">[{{ result.take_up_ci[0] | pct(2) }} ; {{ result.take_up_ci[1] | pct(2) }}]</td>
-                <td class="n">{{ result.margin_bp | bp }}</td>
-                <td class="n">{{ result.raroc | pct(1) }}</td>
-                <td class="n strong">{{ result.rac_per_lead | dec }}</td>
-                <td class="n">{% if result.rac_test %}{{ result.rac_test.difference | dec }}{% else %}n/a{% endif %}</td>
+                <td class="n">{{ result.presented | num }}</td>
+                <td class="n strong">{{ result.sell_through | pct(1) }}</td>
+                <td class="n">[{{ result.sell_through_ci[0] | pct(1) }} ; {{ result.sell_through_ci[1] | pct(1) }}]</td>
+                <td class="n">{{ result.waste_rate | pct(1) }}</td>
+                <td class="n">{% if result.presented %}{{ result.floor_observed | dec(3) }}{% else %}n/a{% endif %}</td>
+                <td class="n">{% if result.presented %}{{ result.margin_per_unit_sold | dec(3) }}{% else %}n/a{% endif %}</td>
+                <td class="n strong">{{ result.contribution_per_unit | dec(3) }}</td>
+                <td class="n">{% if result.contribution_test %}{{ result.contribution_test.difference | dec(3) }}{% else %}n/a{% endif %}</td>
                 <td class="n">
-                  {% if result.rac_test %}{{ result.rac_test.t | dec }}
+                  {% if result.contribution_test %}{{ result.contribution_test.t | dec }}
                     {% if result.boundary_crossed %}<span class="chip success">franchie</span>{% endif %}
                   {% else %}n/a{% endif %}
                 </td>
                 <td class="n">{% if result.prob_beats_control is not none %}{{ (result.prob_beats_control * 100) | round(1) }} %{% else %}n/a{% endif %}</td>
                 <td class="n">
-                  {{ result.mean_pd_converted | pct(2) }}
-                  {% if result.adverse_selection %}<span class="chip warning">derive</span>{% endif %}
+                  {{ (result.mean_quality_sold * 100) | round(1) }}
+                  {% if result.quality_selection %}<span class="chip warning">derive</span>{% endif %}
                 </td>
               </tr>
             {% endfor %}
           </tbody>
           <caption>
-            La colonne <strong>EUR / lead</strong> est la metrique de decision : contribution ajustee
-            du risque par lead expose. Les colonnes <strong>t</strong> et <strong>P(rapporte +)</strong>
-            portent sur cette contribution, jamais sur le taux de conversion, et c'est aussi sur elle
-            que porte la frontiere sequentielle. Une cellule peut convertir moins et rapporter plus.
+            La colonne <strong>EUR / kg presente</strong> est la metrique de decision. Les colonnes
+            <strong>t</strong> et <strong>P(rapporte +)</strong> portent sur elle, jamais sur le taux
+            d'ecoulement, et c'est aussi sur elle que porte la frontiere sequentielle. Le
+            <strong>plancher observe</strong> est recalcule a la rotation constatee : une cellule qui
+            tourne lentement casse davantage et supporte donc un plancher plus haut que celui du plan.
           </caption>
         </table>
       </div>
@@ -170,11 +175,11 @@
 
     <div class="grid k3">
       <div class="card">
-        <header><h3>Take-up et incertitude</h3></header>
-        {{ takeup }}
+        <header><h3>Ecoulement et incertitude</h3></header>
+        {{ sell_through }}
       </div>
       <div class="card">
-        <header><h3>Contribution par lead</h3></header>
+        <header><h3>Contribution par kilo</h3></header>
         {{ contribution }}
       </div>
       <div class="card">
@@ -221,14 +226,14 @@
                 <td class="n">{{ analysis.elasticity.lerner_index | pct(1) }}</td>
                 <td class="muted">(p* − c) / p* = −1/e</td></tr>
             {% endif %}
-            {% if analysis.elasticity.optimal_rate %}
+            {% if analysis.elasticity.optimal_price %}
             <tr><td>Prix optimal theorique</td>
-                <td class="n strong">{{ analysis.elasticity.optimal_rate | pct }}</td>
+                <td class="n strong">{{ analysis.elasticity.optimal_price | kg }}</td>
                 <td class="muted">
                   {% if analysis.elasticity.optimal_is_extrapolated %}
                     <span class="chip warning">extrapolation</span>
-                    hors de l'enveloppe testee [{{ analysis.elasticity.tested_range[0] | pct }} ;
-                    {{ analysis.elasticity.tested_range[1] | pct }}] : hypothese de modele, pas une mesure.
+                    hors de l'enveloppe testee [{{ analysis.elasticity.tested_range[0] | kg }} ;
+                    {{ analysis.elasticity.tested_range[1] | kg }}] : hypothese de modele, pas une mesure.
                   {% else %}
                     a l'interieur de l'enveloppe testee : la valeur est soutenue par des observations.
                   {% endif %}
@@ -249,15 +254,17 @@
         <table class="data">
           <tbody>
             {% for label, value in experiment.price_floor.components %}
-              <tr><td>{{ label }}</td><td class="n">{{ (value * 10000) | round(0) | int }} bps</td></tr>
+              <tr><td>{{ label }}</td><td class="n">{{ value | dec(3) }}</td></tr>
             {% endfor %}
-            <tr><td class="strong">Plancher</td><td class="n strong">{{ analysis.floor_rate | pct }}</td></tr>
-            <tr><td>Cout des fonds propres</td><td class="n">{{ experiment.cost.hurdle_rate | pct(1) }}</td></tr>
-            <tr><td>Capital immobilise</td><td class="n">{{ experiment.cost.capital_intensity | pct(2) }}</td></tr>
+            <tr><td class="strong">Plancher du plan</td><td class="n strong">{{ analysis.floor_planned | kg }}</td></tr>
+            <tr><td>Freinte connue</td><td class="n">{{ experiment.cost.known_shrink | pct(1) }}</td></tr>
+            <tr><td>Valeur de sauvetage</td><td class="n">{{ experiment.cost.salvage_value | kg }}</td></tr>
+            <tr><td>Ecoulement suppose</td><td class="n">{{ experiment.cost.expected_sell_through | pct(1) }}</td></tr>
           </tbody>
           <caption>
-            r<sub>plancher</sub> = f + o + PD×LGD + k×(h − f). Un prix sous ce seuil detruit de la
-            valeur meme s'il est comptablement profitable.
+            p<sub>plancher</sub> = a / s − v × (1 − s) / s + c, avec <em>a</em> le cout
+            d'acquisition par kilo vendable, <em>s</em> l'ecoulement, <em>v</em> la valeur de
+            sauvetage et <em>c</em> l'immobilisation. Il monte quand la rotation ralentit.
           </caption>
         </table>
       </div>
@@ -268,14 +275,14 @@
       <div class="table-wrap">
         <table class="data">
           <tbody>
-            {% if analysis.total_exposed > 0 %}
+            {% if analysis.total_presented > 0 %}
             <tr><td>SRM (chi2, {{ analysis.srm.df }} ddl)</td>
                 <td class="n">{{ analysis.srm.chi_square | dec }}</td>
                 <td><span class="chip {{ 'success' if analysis.srm.passed else 'danger' }}">
                   {{ 'conforme' if analysis.srm.passed else 'echec' }}</span></td></tr>
             <tr><td>p-value</td><td class="n" colspan="2">{{ analysis.srm.p_value | pvalue }}</td></tr>
             {% else %}
-            <tr><td>SRM</td><td class="n" colspan="2"><span class="muted">aucun lead expose</span></td></tr>
+            <tr><td>SRM</td><td class="n" colspan="2"><span class="muted">aucun kilo presente</span></td></tr>
             {% endif %}
             <tr><td>Information accumulee</td>
                 <td class="n" colspan="2">{{ (analysis.information_fraction * 100) | round(0) | int }} %</td></tr>

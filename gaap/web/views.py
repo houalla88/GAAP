@@ -19,7 +19,7 @@ from flask import (Blueprint, abort, current_app, flash, redirect, render_templa
 from ..domain import stats
 from ..domain.analysis import sequential_series
 from ..domain.models import Experiment, ExperimentStatus, PriceCell
-from ..domain.pricing import CostOfRisk
+from ..domain.pricing import CostStack
 from ..infrastructure import ledger
 from ..infrastructure.db import get_db
 from ..infrastructure.repositories import ObservationRepository
@@ -66,13 +66,13 @@ def cockpit():
     rows = []
     for report in reports:
         daily = observations.daily(report.experiment.key)
-        cumulative, exposed, conversions = [], 0, 0
+        cumulative, presented, sold = [], 0, 0
         for day in sorted({point.day for point in daily}):
             for point in (p for p in daily if p.day == day):
-                exposed += point.exposed
-                conversions += point.conversions
-            if exposed:
-                cumulative.append(conversions / exposed)
+                presented += point.presented
+                sold += point.sold
+            if presented:
+                cumulative.append(sold / presented)
         rows.append({
             "report": report,
             "spark": charts.sparkline(cumulative[-30:]) if len(cumulative) > 2 else None,
@@ -82,7 +82,7 @@ def cockpit():
              "insufficient": 4, "keep": 5}
     rows.sort(key=lambda row: (
         order.get(row["report"].recommendation.verdict.value, 9),
-        -row["report"].analysis.total_exposed,
+        -row["report"].analysis.total_presented,
     ))
 
     live = [r for r in reports if r.experiment.status is ExperimentStatus.LIVE]
@@ -91,7 +91,7 @@ def cockpit():
     return render_template(
         "cockpit.html",
         rows=rows,
-        total_exposed=sum(r.analysis.total_exposed for r in reports),
+        total_presented=sum(r.analysis.total_presented for r in reports),
         live_count=len(live),
         blocked_count=len(blocked),
         at_risk=[r for r in reports if not r.runtime.cleared],
@@ -108,8 +108,8 @@ def experiment_detail(key: str):
         abort(404)
 
     analysis = report.analysis
-    challengers = [r for r in analysis.results if not r.is_control and r.rac_test]
-    focus = max(challengers, key=lambda r: abs(r.rac_test.t)) if challengers else None
+    challengers = [r for r in analysis.results if not r.is_control and r.contribution_test]
+    focus = max(challengers, key=lambda r: abs(r.contribution_test.t)) if challengers else None
 
     daily = ObservationRepository(get_db()).daily(key)
     series = sequential_series(report.experiment, daily, focus.cell.key) if focus else []
@@ -120,7 +120,7 @@ def experiment_detail(key: str):
         analysis=analysis,
         focus=focus,
         ladder=charts.price_ladder(analysis.results, report.experiment.price_floor),
-        takeup=charts.takeup_chart(analysis.results, analysis.alpha_adjusted),
+        sell_through=charts.sell_through_chart(analysis.results, analysis.alpha_adjusted),
         elasticity_chart=charts.elasticity_chart(analysis.results, analysis.elasticity),
         contribution=charts.contribution_chart(analysis.results),
         sequential=charts.sequential_chart(
@@ -194,8 +194,8 @@ def experiment_new():
         return redirect(url_for("web.experiment_detail", key=experiment.key))
 
     return render_template("new.html", defaults={
-        "alpha": 0.05, "power": 0.80, "target_mde": 0.15,
-        "baseline_rate": 0.06, "holdout_share": 0.05,
+        "alpha": 0.05, "power": 0.80, "target_mde": 0.05,
+        "baseline_sell_through": 0.82, "holdout_share": 0.05,
     })
 
 
@@ -213,27 +213,28 @@ def _default_salt(key: str) -> str:
 def _experiment_from_form(form) -> Experiment:
     """Construit un plan a partir du formulaire.
 
-    Les taux sont saisis en pourcentage et convertis ici : l'unite de saisie
-    est celle du metier, l'unite de calcul est le decimal. Melanger les deux
-    est une source classique d'erreur de tarification a deux ordres de grandeur.
+    Les prix sont saisis en euros par kilo et les pourcentages en points :
+    l'unite de saisie est celle du metier, l'unite de calcul est le decimal.
+    Melanger les deux est une source classique d'erreur de tarification a deux
+    ordres de grandeur.
     """
-    rates = [float(v.replace(",", ".")) / 100.0 for v in form.getlist("cell_rate") if v.strip()]
+    prices = [float(v.replace(",", ".")) for v in form.getlist("cell_price") if v.strip()]
     weights = [float(v.replace(",", ".")) for v in form.getlist("cell_weight") if v.strip()]
-    fees = [float(v.replace(",", ".") or 0) for v in form.getlist("cell_fee")]
-    if len(rates) < 2:
+    discounts = [float(v.replace(",", ".") or 0) for v in form.getlist("cell_discount")]
+    if len(prices) < 2:
         raise ValueError("au moins deux cellules de prix sont necessaires")
-    if len(weights) != len(rates):
+    if len(weights) != len(prices):
         raise ValueError("chaque cellule doit porter un poids d'allocation")
 
     cells = []
-    for index, rate in enumerate(rates):
+    for index, price in enumerate(prices):
         cells.append(PriceCell(
             key="ctl" if index == 0 else f"v{index}",
-            label=(f"Controle {rate * 100:.2f} %" if index == 0
-                   else f"{(rate - rates[0]) * 10000:+.0f} bps ({rate * 100:.2f} %)"),
-            rate=rate,
+            label=(f"Controle {price:.2f} EUR" if index == 0
+                   else f"{(price - prices[0]) * 100:+.0f} c ({price:.2f} EUR)"),
+            price=price,
             weight=weights[index],
-            fee=fees[index] if index < len(fees) else 0.0,
+            pack_discount=discounts[index] if index < len(discounts) else 0.0,
             is_control=index == 0,
         ))
 
@@ -249,27 +250,25 @@ def _experiment_from_form(form) -> Experiment:
         owner=form.get("owner", "").strip(),
         salt=form.get("salt", "").strip() or _default_salt(form["key"].strip()),
         cells=tuple(cells),
-        cost=CostOfRisk(
-            funding_rate=number("funding_rate") / 100.0,
-            operating_cost_rate=number("operating_cost_rate") / 100.0,
-            pd=number("pd") / 100.0,
-            lgd=number("lgd") / 100.0,
-            risk_weight=number("risk_weight", 75.0) / 100.0,
-            capital_ratio=number("capital_ratio", 12.5) / 100.0,
-            hurdle_rate=number("hurdle_rate", 11.0) / 100.0,
+        cost=CostStack(
+            purchase_cost=number("purchase_cost", 1.45),
+            logistics_cost=number("logistics_cost", 0.18),
+            handling_cost=number("handling_cost", 0.22),
+            known_shrink=number("known_shrink", 6.0) / 100.0,
+            salvage_value=number("salvage_value", 0.0),
+            expected_sell_through=number("expected_sell_through", 82.0) / 100.0,
+            capital_cost=number("capital_cost", 0.012),
         ),
-        principal=number("principal", 10000.0),
-        duration_factor=number("duration_factor", 2.4),
         holdout_share=number("holdout_share", 5.0) / 100.0,
         max_exposure=number("max_exposure", 50.0) / 100.0,
-        max_delta_bp=number("max_delta_bp", 120.0),
-        max_duration_days=int(number("max_duration_days", 45)),
-        min_sample_per_cell=int(number("min_sample_per_cell", 5000)),
-        loss_tolerance_per_lead=number("loss_tolerance_per_lead", 5.0),
+        max_delta_cents=number("max_delta_cents", 50.0),
+        max_duration_days=int(number("max_duration_days", 28)),
+        min_sample_per_cell=int(number("min_sample_per_cell", 10000)),
+        loss_tolerance_per_unit=number("loss_tolerance_per_unit", 0.12),
         alpha=number("alpha", 5.0) / 100.0,
         power=number("power", 80.0) / 100.0,
-        target_mde=number("target_mde", 15.0) / 100.0,
-        baseline_rate=number("baseline_rate", 6.0) / 100.0,
+        target_mde=number("target_mde", 5.0) / 100.0,
+        baseline_sell_through=number("baseline_sell_through", 82.0) / 100.0,
         planned_volume=int(number("planned_volume", 0)),
     )
 
@@ -298,8 +297,8 @@ def lab(key: str | None = None):
             return default
 
     params = SimulationInput(
-        true_elasticity=number("elasticity", -3.5),
-        baseline_take_up=number("baseline", experiment.baseline_rate * 100) / 100.0,
+        true_elasticity=number("elasticity", -1.2),
+        baseline_sell_through=number("baseline", experiment.baseline_sell_through * 100) / 100.0,
         total_volume=int(number("volume", experiment.planned_volume or 40_000)),
         replications=int(number("replications", 300)),
     )

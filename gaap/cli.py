@@ -98,10 +98,10 @@ def verify_ledger_command() -> None:
 
 @click.command("replay")
 @click.argument("experiment_key")
-@click.argument("subject_id")
+@click.argument("unit_id")
 @with_appcontext
-def replay_command(experiment_key: str, subject_id: str) -> None:
-    """Rejoue l'affectation d'un sujet : quel prix lui a ete servi, et pourquoi.
+def replay_command(experiment_key: str, unit_id: str) -> None:
+    """Rejoue l'affectation d'une unite : quel prix a ete affiche, et pourquoi.
 
     C'est la reponse operationnelle a une reclamation ou a une demande de
     controle. Elle ne depend d'aucune table d'affectation : le sel et le plan
@@ -110,14 +110,15 @@ def replay_command(experiment_key: str, subject_id: str) -> None:
     experiment = ExperimentRepository(get_db()).get(experiment_key)
     if experiment is None:
         raise click.ClickException(f"Experience '{experiment_key}' introuvable.")
-    result = assign(experiment, subject_id, enforce_status=False)
+    result = assign(experiment, unit_id, enforce_status=False)
     click.echo(f"Experience   : {experiment.key} ({experiment.name})")
     click.echo(f"Sel          : {experiment.salt}")
-    click.echo(f"Sujet        : {subject_id}")
+    click.echo(f"Unite        : {unit_id}")
     click.echo(f"Tirage       : {result.bucket:.12f}")
     click.echo(f"Cellule      : {result.cell_key} - {result.outcome.label}")
-    click.echo(f"Prix servi   : {result.rate * 100:.2f} %"
-               + (f" + {result.fee:.0f} EUR de frais" if result.fee else ""))
+    click.echo(f"Prix affiche : {result.price:.2f} EUR/kg"
+               + (f", remise lot {result.pack_discount:.2f} EUR"
+                  if result.pack_discount else ""))
 
 
 @click.command("report")
@@ -131,18 +132,21 @@ def report_command(experiment_key: str) -> None:
 
     analysis = report.analysis
     click.echo(f"\n{report.experiment.name}  [{report.experiment.status.label}]")
-    click.echo(f"Plancher de rentabilite : {analysis.floor_rate * 100:.2f} %")
-    click.echo(f"SRM : p = {analysis.srm.p_value:.4f} "
+    click.echo(f"Plancher du plan : {analysis.floor_planned:.3f} EUR/kg")
+    p_srm = (f"{analysis.srm.p_value:.1e}" if analysis.srm.p_value < 1e-4
+             else f"{analysis.srm.p_value:.4f}")
+    click.echo(f"SRM : p = {p_srm} "
                f"({'conforme' if analysis.srm.passed else 'ECHEC'})")
     click.echo(f"Information : {analysis.information_fraction * 100:.0f} %  "
-               f"frontiere |z| >= {analysis.boundary:.2f}\n")
-    click.echo(f"{'Cellule':<22}{'n':>8}{'take-up':>10}{'marge bp':>10}"
-               f"{'EUR/lead':>10}{'z':>8}")
+               f"frontiere |t| >= {analysis.boundary:.2f}\n")
+    click.echo(f"{'Cellule':<24}{'kg':>8}{'ecoul.':>9}{'casse':>8}"
+               f"{'planch.':>9}{'EUR/kg':>9}{'t':>8}")
     for result in analysis.results:
-        z_value = f"{result.takeup_test.z:.2f}" if result.takeup_test else "-"
-        click.echo(f"{result.cell.label:<22}{result.exposed:>8}"
-                   f"{result.take_up * 100:>9.2f}%{result.margin_bp:>10.0f}"
-                   f"{result.rac_per_lead:>10.2f}{z_value:>8}")
+        t_value = f"{result.contribution_test.t:.2f}" if result.contribution_test else "-"
+        floor = (f"{result.floor_observed:.3f}" if result.presented else "-")
+        click.echo(f"{result.cell.label:<24}{result.presented:>8}"
+                   f"{result.sell_through * 100:>8.1f}%{result.waste_rate * 100:>7.1f}%"
+                   f"{floor:>9}{result.contribution_per_unit:>9.3f}{t_value:>8}")
     if analysis.elasticity:
         elasticity = analysis.elasticity
         click.echo(f"\nElasticite : {elasticity.value:.2f} "

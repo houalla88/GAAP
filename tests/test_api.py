@@ -14,7 +14,7 @@ def live_plan(app, plan):
         service = ExperimentService(get_db())
         service.create(plan, "analyste")
         service.submit_for_review(plan.key, "analyste")
-        service.approve(plan.key, "direction.risques")
+        service.approve(plan.key, "direction.commerciale")
         service.activate(plan.key, "analyste")
     return plan
 
@@ -48,16 +48,16 @@ class TestSecurite:
 class TestAffectation:
     def test_prix_servi_et_reproductible(self, client, live_plan):
         premiere = client.post("/api/v1/assign",
-                               json={"experiment": live_plan.key, "subject_id": "CLI-42"})
+                               json={"experiment": live_plan.key, "unit_id": "LOT-42"})
         seconde = client.post("/api/v1/assign",
-                              json={"experiment": live_plan.key, "subject_id": "CLI-42"})
+                              json={"experiment": live_plan.key, "unit_id": "LOT-42"})
         assert premiere.status_code == 200
         assert premiere.get_json()["cell"] == seconde.get_json()["cell"]
-        assert premiere.get_json()["rate"] > 0
+        assert premiere.get_json()["price"] > 0
 
     def test_experience_inconnue_retourne_404(self, client):
         reponse = client.post("/api/v1/assign",
-                              json={"experiment": "absente", "subject_id": "x"})
+                              json={"experiment": "absente", "unit_id": "x"})
         assert reponse.status_code == 404
         assert reponse.get_json()["error"] == "experiment_not_found"
 
@@ -68,17 +68,17 @@ class TestAffectation:
         with app.app_context():
             from gaap.infrastructure.db import get_db
             protege = plan.with_status(plan.status, key="exclu",
-                                       excluded_segments=("surendettement",))
+                                       excluded_segments=("magasins_pilotes",))
             service = ExperimentService(get_db())
             service.create(protege, "analyste")
             service.submit_for_review("exclu", "analyste")
-            service.approve("exclu", "direction.risques")
+            service.approve("exclu", "direction.commerciale")
             service.activate("exclu", "analyste")
         reponse = client.post("/api/v1/assign", json={
-            "experiment": "exclu", "subject_id": "CLI-7", "segment": "surendettement",
+            "experiment": "exclu", "unit_id": "LOT-7", "segment": "magasins_pilotes",
         }).get_json()
         assert reponse["outcome"] == "excluded"
-        assert reponse["rate"] == pytest.approx(plan.control.rate)
+        assert reponse["price"] == pytest.approx(plan.control.price)
         assert reponse["in_analysis"] is False
 
 
@@ -86,46 +86,48 @@ class TestObservations:
     def test_enregistrement_puis_lecture_du_rapport(self, client, live_plan):
         for i in range(40):
             assignation = client.post("/api/v1/assign", json={
-                "experiment": live_plan.key, "subject_id": f"S{i}",
+                "experiment": live_plan.key, "unit_id": f"K{i}",
             }).get_json()
             client.post("/api/v1/observations", json={
-                "experiment": live_plan.key, "subject_id": f"S{i}",
-                "cell": assignation["cell"], "converted": i % 8 == 0,
-                "pd": 0.021, "principal": 12_500,
+                "experiment": live_plan.key, "unit_id": f"K{i}",
+                "cell": assignation["cell"], "sold": i % 5 != 0,
+                "quality_index": 0.70,
             })
         rapport = client.get(f"/api/v1/experiments/{live_plan.key}/report").get_json()
-        assert sum(c["exposed"] for c in rapport["cells"]) > 0
-        assert rapport["floor_rate"] == pytest.approx(live_plan.price_floor.total)
+        assert sum(c["presented"] for c in rapport["cells"]) > 0
+        assert rapport["floor_planned"] == pytest.approx(live_plan.price_floor.total)
 
     def test_doublon_ignore(self, client, live_plan):
-        payload = {"experiment": live_plan.key, "subject_id": "S1", "cell": "ctl",
-                   "converted": True, "pd": 0.02, "principal": 10_000}
+        payload = {"experiment": live_plan.key, "unit_id": "K1", "cell": "ctl",
+                   "sold": True, "quality_index": 0.70}
         assert client.post("/api/v1/observations", json=payload).get_json()["recorded"] == 1
         assert client.post("/api/v1/observations", json=payload).get_json()["recorded"] == 0
 
     def test_champs_manquants_refuses(self, client):
         reponse = client.post("/api/v1/observations", json={"experiment": "x"})
         assert reponse.status_code == 400
-        assert "subject_id" in reponse.get_json()["fields"]
+        assert "unit_id" in reponse.get_json()["fields"]
 
 
 class TestDimensionnement:
     def test_correction_de_bonferroni_appliquee(self, client):
         resultat = client.post("/api/v1/design/power", json={
-            "baseline_rate": 0.06, "target_mde": 0.15, "cells": 4, "planned_volume": 60_000,
+            "baseline_sell_through": 0.82, "target_mde": 0.05, "cells": 4,
+            "planned_volume": 72_000,
         }).get_json()
         assert resultat["comparisons"] == 3
         assert resultat["alpha_adjusted"] == pytest.approx(0.05 / 3, abs=1e-4)
 
     def test_volume_insuffisant_signale(self, client):
         resultat = client.post("/api/v1/design/power", json={
-            "baseline_rate": 0.06, "target_mde": 0.05, "cells": 2, "planned_volume": 2_000,
+            "baseline_sell_through": 0.82, "target_mde": 0.01, "cells": 2,
+            "planned_volume": 2_000,
         }).get_json()
         assert resultat["sufficient"] is False
 
     def test_parametre_hors_domaine_refuse(self, client):
         assert client.post("/api/v1/design/power",
-                           json={"baseline_rate": 1.4}).status_code == 400
+                           json={"baseline_sell_through": 1.4}).status_code == 400
 
 
 class TestInterface:
@@ -158,4 +160,4 @@ def test_interface_et_api_lisent_la_meme_source(client, live_plan):
     exportable a l'identique."""
     rapport = client.get(f"/api/v1/experiments/{live_plan.key}/report").get_json()
     page = client.get(f"/experiences/{live_plan.key}").get_data(as_text=True)
-    assert f"{rapport['floor_rate'] * 100:.2f}".replace(".", ",") in page
+    assert f"{rapport['floor_planned']:.2f}".replace(".", ",") in page

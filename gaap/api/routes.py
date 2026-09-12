@@ -2,8 +2,8 @@
 
 Deux publics distincts, deliberement servis par le meme socle :
 
-- le **moteur de tarification**, qui appelle `/assign` sur le chemin critique
-  d'une demande de credit et attend une reponse simple et rapide ;
+- le **systeme d'etiquetage**, qui appelle `/assign` au moment de generer une
+  affiche prix et attend une reponse simple et rapide ;
 - les **equipes analytiques**, qui recuperent le rapport complet d'une
   experience pour le rejouer dans leurs propres outils.
 
@@ -51,7 +51,7 @@ def list_experiments():
                 "key": e.key, "name": e.name, "product": e.product,
                 "status": e.status.value, "owner": e.owner,
                 "cells": len(e.cells), "exposure": round(e.exposure, 4),
-                "floor_rate": round(e.price_floor.total, 6),
+                "floor_planned": round(e.price_floor.total, 4),
             }
             for e in service.list()
         ]
@@ -76,20 +76,20 @@ def get_report(key: str):
 
 @api.post("/assign")
 def post_assign():
-    """Affecte un sujet et retourne le prix a servir.
+    """Affecte une unite et retourne le prix a afficher.
 
-    Retourne toujours un prix : si l'experience est inactive, hors perimetre
-    ou inconnue du sujet, c'est le prix de reference qui est renvoye, avec le
-    motif. Un moteur de tarification ne doit jamais avoir a gerer une absence
-    de reponse de GAAP.
+    Retourne toujours un prix : si l'experience est inactive, hors perimetre ou
+    si l'unite est exclue, c'est le prix de reference qui est renvoye, avec le
+    motif. Un systeme d'etiquetage ne doit jamais avoir a gerer une absence de
+    reponse de GAAP.
     """
     payload = request.get_json(silent=True) or {}
     key = payload.get("experiment")
-    subject_id = payload.get("subject_id")
-    if not key or not subject_id:
+    unit_id = payload.get("unit_id")
+    if not key or not unit_id:
         return jsonify({"error": "missing_parameters",
-                        "detail": "'experiment' et 'subject_id' sont requis."}), 400
-    assignment = AssignmentService(get_db()).price_for(key, subject_id, payload.get("segment", ""))
+                        "detail": "'experiment' et 'unit_id' sont requis."}), 400
+    assignment = AssignmentService(get_db()).price_for(key, unit_id, payload.get("segment", ""))
     if assignment is None:
         return jsonify({"error": "experiment_not_found", "key": key}), 404
     return jsonify(assignment.to_dict())
@@ -97,19 +97,18 @@ def post_assign():
 
 @api.post("/observations")
 def post_observation():
-    """Enregistre l'issue commerciale d'un lead expose."""
+    """Enregistre l'issue d'un kilo mis en rayon : vendu ou casse."""
     payload = request.get_json(silent=True) or {}
-    required = ("experiment", "subject_id", "cell", "converted")
+    required = ("experiment", "unit_id", "cell", "sold")
     missing = [field for field in required if field not in payload]
     if missing:
         return jsonify({"error": "missing_parameters", "fields": missing}), 400
     written = AssignmentService(get_db()).record(
         experiment_key=payload["experiment"],
-        subject_id=payload["subject_id"],
+        unit_id=payload["unit_id"],
         cell_key=payload["cell"],
-        converted=bool(payload["converted"]),
-        pd=float(payload.get("pd", 0.0)),
-        principal=float(payload.get("principal", 0.0)),
+        sold=bool(payload["sold"]),
+        quality_index=float(payload.get("quality_index", 0.0)),
         segment=payload.get("segment", ""),
     )
     return jsonify({"recorded": written}), 201 if written else 200
@@ -125,7 +124,7 @@ def post_power():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        baseline = float(payload.get("baseline_rate", 0.06))
+        baseline = float(payload.get("baseline_sell_through", 0.82))
         mde = float(payload.get("target_mde", 0.05))
         alpha = float(payload.get("alpha", 0.05))
         power = float(payload.get("power", 0.80))
@@ -136,7 +135,7 @@ def post_power():
 
     if not 0.0 < baseline < 1.0:
         return jsonify({"error": "invalid_parameters",
-                        "detail": "baseline_rate doit etre dans ]0, 1["}), 400
+                        "detail": "baseline_sell_through doit etre dans ]0, 1["}), 400
 
     alpha_adjusted = stats.bonferroni(alpha, cells - 1)
     required = stats.required_sample_size_per_arm(baseline, mde, alpha_adjusted, power)

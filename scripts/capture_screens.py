@@ -37,9 +37,9 @@ CHROMIUM = os.environ.get("GAAP_CHROMIUM") or next(
 #: (nom de fichier, chemin, selecteur a capturer ou None pour la page entiere)
 SHOTS = [
     ("01-cockpit.png", "/", None),
-    ("02-experience-verdict.png", "/experiences/pp-taeg-2026q3", None),
-    ("03-garde-fous-refus.png", "/experiences/auto-offensive-2026q4", None),
-    ("04-laboratoire.png", "/laboratoire/pp-taeg-2026q3", None),
+    ("02-experience-verdict.png", "/experiences/tomate-grappe-2026s37", None),
+    ("03-garde-fous-refus.png", "/experiences/avocat-conquete-2026s40", None),
+    ("04-laboratoire.png", "/laboratoire/tomate-grappe-2026s37", None),
     ("05-piste-audit.png", "/piste-audit", None),
     ("06-nouveau-plan.png", "/experiences/nouvelle", None),
 ]
@@ -92,9 +92,9 @@ def main() -> int:
             for filename, path, selector in SHOTS:
                 page.goto(f"http://127.0.0.1:{PORT}{path}", wait_until="networkidle")
                 if filename == "04-laboratoire.png":
-                    page.fill("#elasticity", "-4,0")
-                    page.fill("#baseline", "6,10")
-                    page.fill("#volume", "46000")
+                    page.fill("#elasticity", "-1,0")
+                    page.fill("#baseline", "82,0")
+                    page.fill("#volume", "72000")
                     page.click("button[type=submit]")
                     page.wait_for_selector(".kpi.accent")
                 page.wait_for_timeout(350)

@@ -24,22 +24,21 @@ CREATE TABLE IF NOT EXISTS experiments (
 
 CREATE INDEX IF NOT EXISTS idx_experiments_status ON experiments(status);
 
--- Une observation = un lead expose et son issue commerciale.
--- La contrainte d'unicite (experience, sujet) materialise l'unicite de
--- l'affectation : un meme client ne peut pas etre compte deux fois dans un
--- meme test, ce qui est la premiere source de gonflement artificiel d'un
--- resultat d'experimentation.
+-- Une observation = un kilo mis en rayon et son issue : vendu ou casse.
+-- La contrainte d'unicite (experience, unite) materialise l'unicite de
+-- l'affectation : un meme kilo ne peut pas etre compte deux fois dans un meme
+-- test, ce qui est la premiere source de gonflement artificiel d'un resultat
+-- d'experimentation.
 CREATE TABLE IF NOT EXISTS observations (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     experiment_key TEXT NOT NULL REFERENCES experiments(key) ON DELETE CASCADE,
-    subject_id     TEXT NOT NULL,
+    unit_id        TEXT NOT NULL,
     cell_key       TEXT NOT NULL,
-    converted      INTEGER NOT NULL CHECK (converted IN (0, 1)),
-    pd             REAL NOT NULL,
-    principal      REAL NOT NULL,
+    sold           INTEGER NOT NULL CHECK (sold IN (0, 1)),
+    quality_index  REAL NOT NULL,
     segment        TEXT NOT NULL DEFAULT '',
     observed_at    TEXT NOT NULL,
-    UNIQUE (experiment_key, subject_id)
+    UNIQUE (experiment_key, unit_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_observations_cell ON observations(experiment_key, cell_key);
