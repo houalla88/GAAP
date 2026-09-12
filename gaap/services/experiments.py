@@ -165,7 +165,7 @@ class ExperimentService:
         )
         self._repo.save(experiment)
         ledger.append(self._conn, actor, "experiment.concluded", key, {
-            "exposed": self._observations.total_exposed(key),
+            "presented": self._observations.total_presented(key),
             "recommendation": recommendation or {},
         })
         return experiment

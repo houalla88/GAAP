@@ -18,8 +18,8 @@
     <div class="note">{{ blocked_count }} plan(s) bloque(s) par les garde-fous</div>
   </div>
   <div class="kpi">
-    <div class="label">Leads exposes</div>
-    <div class="value">{{ total_exposed | num }}</div>
+    <div class="label">Kilos mis en rayon</div>
+    <div class="value">{{ total_presented | num }}</div>
     <div class="note">cumul toutes experiences</div>
   </div>
   <div class="kpi">
@@ -59,9 +59,9 @@
         <tr>
           <th>Experience</th>
           <th>Etat</th>
-          <th class="n">Exposes</th>
+          <th class="n">Kilos</th>
           <th class="n">Information</th>
-          <th class="n">Take-up</th>
+          <th class="n">Ecoulement</th>
           <th class="n">Meilleure contribution</th>
           <th>Tendance</th>
           <th>Verdict</th>
@@ -71,24 +71,34 @@
         {% for row in rows %}
           {% set report = row.report %}
           {% set analysis = report.analysis %}
-          {% set best = analysis.best_by_rac %}
+          {% set best = analysis.best_by_contribution %}
           <tr>
             <td>
               <span class="cell-name">
                 <a href="{{ url_for('web.experiment_detail', key=report.experiment.key) }}"><strong>{{ report.experiment.name }}</strong></a>
-                <span class="sub">{{ report.experiment.product }} · plancher {{ analysis.floor_rate | pct }}</span>
+                <span class="sub">{{ report.experiment.product }} · plancher {{ analysis.floor_planned | kg }}</span>
               </span>
             </td>
             <td><span class="chip {{ report.experiment.status.value }}">{{ report.experiment.status.label }}</span></td>
-            <td class="n">{{ analysis.total_exposed | num }}</td>
+            <td class="n">{{ analysis.total_presented | num }}</td>
             <td class="n">
               {{ progress_bar(analysis.information_fraction, 'information accumulee') }}
               <span class="caption">{{ (analysis.information_fraction * 100) | round(0) | int }} %</span>
             </td>
-            <td class="n">{{ analysis.control_result.take_up | pct }}</td>
+            {# Un plan qui n'a encore rien servi n'a pas d'ecoulement ni de
+               contribution mesures : afficher un chiffre calcule sur zero kilo
+               donnerait a une hypothese l'apparence d'une observation. #}
             <td class="n">
-              <span class="strong">{{ best.rac_per_lead | dec }} EUR</span><br>
-              <span class="caption">{{ best.cell.label }}</span>
+              {% if analysis.total_presented %}{{ analysis.control_result.sell_through | pct(1) }}
+              {% else %}<span class="caption">n/a</span>{% endif %}
+            </td>
+            <td class="n">
+              {% if analysis.total_presented %}
+                <span class="strong">{{ best.contribution_per_unit | dec(3) }} EUR/kg</span><br>
+                <span class="caption">{{ best.cell.label }}</span>
+              {% else %}
+                <span class="caption">pas encore servi</span>
+              {% endif %}
             </td>
             <td>{% if row.spark %}{{ row.spark }}{% else %}<span class="caption">n/a</span>{% endif %}</td>
             <td>
@@ -103,7 +113,7 @@
         {% endfor %}
       </tbody>
       <caption>
-        Le verdict porte sur la contribution ajustee du risque, jamais sur le seul taux de conversion.
+        Le verdict porte sur la contribution ajustee du risque, jamais sur le seul ecoulement.
         Un test invalide (rupture d'allocation) n'est pas lu, quelle que soit l'apparence de ses chiffres.
       </caption>
     </table>

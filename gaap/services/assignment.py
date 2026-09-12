@@ -26,17 +26,17 @@ class AssignmentService:
         self._experiments = ExperimentRepository(conn)
         self._observations = ObservationRepository(conn)
 
-    def price_for(self, experiment_key: str, subject_id: str,
+    def price_for(self, experiment_key: str, unit_id: str,
                   segment: str = "") -> Assignment | None:
         experiment = self._experiments.get(experiment_key)
         if experiment is None:
             return None
-        return assign(experiment, subject_id, segment)
+        return assign(experiment, unit_id, segment)
 
-    def record(self, experiment_key: str, subject_id: str, cell_key: str,
-               converted: bool, pd: float, principal: float, segment: str = "") -> int:
-        """Enregistre l'issue commerciale d'un lead deja affecte."""
+    def record(self, experiment_key: str, unit_id: str, cell_key: str,
+               sold: bool, quality_index: float, segment: str = "") -> int:
+        """Enregistre l'issue d'un kilo deja affecte : vendu ou casse."""
         return self._observations.record_many([(
-            experiment_key, subject_id, cell_key, 1 if converted else 0,
-            float(pd), float(principal), segment, utcnow(),
+            experiment_key, unit_id, cell_key, 1 if sold else 0,
+            float(quality_index), segment, utcnow(),
         )])

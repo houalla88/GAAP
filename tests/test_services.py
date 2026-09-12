@@ -92,7 +92,7 @@ class TestPlanFige:
         donnees - faute difficile a detecter apres coup et fatale a la validite."""
         actif = self._active(service, plan)
         with pytest.raises(LifecycleError, match="fige"):
-            service.update_plan(actif.with_status(actif.status, max_delta_bp=300.0), "analyste")
+            service.update_plan(actif.with_status(actif.status, max_delta_cents=300.0), "analyste")
 
     def test_modification_d_un_brouillon_annule_la_validation(self, service, plan, conn):
         service.create(plan, "analyste")
@@ -123,5 +123,5 @@ def test_empreinte_de_configuration_change_avec_le_plan(service, plan):
     service.create(plan, "analyste")
     avant = service.config_hash(plan.key)
     service.update_plan(service.get(plan.key).with_status(ExperimentStatus.DRAFT,
-                                                          max_delta_bp=150.0), "analyste")
+                                                          max_delta_cents=150.0), "analyste")
     assert service.config_hash(plan.key) != avant

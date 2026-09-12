@@ -37,11 +37,24 @@ def pp(value: float | None, decimals: int = 2) -> str:
     return f"{value * 100:+.{decimals}f}".replace(".", ",") + _NBSP + "pt"
 
 
-def bp(value: float | None, decimals: int = 0) -> str:
-    """Points de base, signes."""
+def cents(value: float | None, decimals: int = 0) -> str:
+    """Ecart de prix en centimes par kilo, signe."""
     if value is None:
         return "-"
-    return f"{value:+.{decimals}f}".replace(".", ",") + _NBSP + "bps"
+    return f"{value:+.{decimals}f}".replace(".", ",") + _NBSP + "c"
+
+
+def kg(value: float | None, decimals: int = 2) -> str:
+    """Montant en euros par kilo."""
+    if value is None:
+        return "-"
+    return f"{value:.{decimals}f}".replace(".", ",") + _NBSP + "EUR/kg"
+
+
+def kg_signed(value: float | None, decimals: int = 3) -> str:
+    if value is None:
+        return "-"
+    return f"{value:+.{decimals}f}".replace(".", ",") + _NBSP + "EUR/kg"
 
 
 def eur(value: float | None, decimals: int = 0) -> str:
@@ -101,7 +114,8 @@ def day(value: str | None) -> str:
 
 def register(app: Flask) -> None:
     app.jinja_env.filters.update(
-        pct=pct, pp=pp, bp=bp, eur=eur, eur_signed=eur_signed,
+        pct=pct, pp=pp, cents=cents, kg=kg, kg_signed=kg_signed,
+        eur=eur, eur_signed=eur_signed,
         num=num, dec=dec, pvalue=pvalue, when=when, day=day,
     )
     app.jinja_env.globals.update(progress_bar=charts.progress_bar)

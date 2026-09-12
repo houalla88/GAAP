@@ -1,8 +1,9 @@
 """Laboratoire : pre-mortem d'un plan tarifaire avant depense reelle.
 
-Un test de prix consomme de la marge pendant qu'il tourne. Le lancer sans
-savoir s'il est capable de conclure est la facon la plus courante de payer une
-information qu'on n'obtiendra pas. Ce module repond a trois questions, avant
+Un test de prix consomme de la marge pendant qu'il tourne, et de la
+marchandise qui ne se rattrape pas. Le lancer sans savoir s'il est capable de
+conclure est la facon la plus courante de payer une information qu'on
+n'obtiendra pas. Ce module repond a trois questions, avant
 que le premier euro ne soit engage :
 
 1. **Ce plan peut-il conclure ?** Probabilite de franchir la frontiere de
@@ -14,7 +15,7 @@ que le premier euro ne soit engage :
    estimee a +/- 1,2 ne permet aucune decision tarifaire ulterieure.
 
 Le modele generateur est explicite : demande a elasticite constante
-q(p) = q_ref x (p / p_ref)^e. C'est une hypothese forte (pas de courbure, pas
+s(p) = s_ref x (p / p_ref)^e. C'est une hypothese forte (pas de courbure, pas
 de seuil psychologique, pas d'effet de concurrence), assumee comme telle : elle
 sert a dimensionner, pas a predire. Les resultats du laboratoire ne sont
 jamais melanges aux resultats reels dans l'interface.
@@ -39,7 +40,7 @@ class SimulationInput:
     """Hypotheses du pre-mortem. Toutes explicites, aucune valeur cachee."""
 
     true_elasticity: float
-    baseline_take_up: float
+    baseline_sell_through: float
     total_volume: int
     replications: int = 400
     seed: int = 20260912
@@ -60,8 +61,8 @@ class SimulationResult:
     elasticity_sd: float
     elasticity_coverage: float
     true_best_cell: str
-    true_best_rac: float
-    per_cell_true_take_up: dict[str, float]
+    true_best_contribution: float
+    per_cell_true_sell_through: dict[str, float]
     assumptions: dict
 
     @property
@@ -97,26 +98,25 @@ def simulate(experiment: Experiment, params: SimulationInput) -> SimulationResul
     """Rejoue le plan `replications` fois sous l'hypothese d'elasticite fournie."""
     rng = random.Random(params.seed)
     control = experiment.control
-    reference_rate = control.rate
-    denominator = experiment.principal * experiment.duration_factor
+    cost = experiment.cost
+    reference_price = control.effective_price
+    dead_loss = cost.salvage_value - cost.acquisition_cost
 
-    def effective(cell) -> float:
-        return cell.rate + (cell.fee / denominator if denominator > 0 else 0.0)
-
-    ref_eff = effective(control)
-    true_take_up = {
-        cell.key: max(1e-6, min(0.999, params.baseline_take_up
-                                * (effective(cell) / ref_eff) ** params.true_elasticity))
+    true_sell_through = {
+        cell.key: max(1e-6, min(0.999, params.baseline_sell_through
+                                * (cell.effective_price / reference_price)
+                                ** params.true_elasticity))
         for cell in experiment.cells
     }
 
     # Verite terrain : quelle cellule maximise reellement la contribution ?
-    floor = experiment.price_floor.total
-    true_rac = {
-        cell.key: true_take_up[cell.key] * (effective(cell) - floor) * denominator
+    true_contribution = {
+        cell.key: (true_sell_through[cell.key]
+                   * (cell.effective_price - cost.salvage_value - cost.capital_cost)
+                   + dead_loss)
         for cell in experiment.cells
     }
-    best_cell = max(true_rac, key=true_rac.get)
+    best_cell = max(true_contribution, key=true_contribution.get)
 
     total_weight = sum(c.weight for c in experiment.cells)
     verdicts: dict[str, int] = {}
@@ -129,18 +129,18 @@ def simulate(experiment: Experiment, params: SimulationInput) -> SimulationResul
     for _ in range(params.replications):
         aggregates = []
         for cell in experiment.cells:
-            exposed = int(round(params.total_volume * cell.weight / total_weight))
-            conversions = _binomial(rng, exposed, true_take_up[cell.key])
-            # La PD est simulee sans derive : le laboratoire dimensionne la
-            # detection d'un effet de prix, pas celle d'une anti-selection, qui
-            # demanderait un modele de selection explicite.
-            pd_mean = experiment.cost.pd
+            presented = int(round(params.total_volume * cell.weight / total_weight))
+            sold = _binomial(rng, presented, true_sell_through[cell.key])
+            # La fraîcheur est simulee sans derive : le laboratoire dimensionne
+            # la detection d'un effet de prix, pas celle d'une selection par la
+            # qualite, qui demanderait un modele de choix explicite.
+            quality = 0.70
             aggregates.append(CellAggregate(
-                cell_key=cell.key, exposed=exposed, conversions=conversions,
-                pd_sum_exposed=exposed * pd_mean,
-                pd_sq_sum_exposed=exposed * pd_mean * pd_mean,
-                pd_sum_converted=conversions * pd_mean,
-                pd_sq_sum_converted=conversions * pd_mean * pd_mean,
+                cell_key=cell.key, presented=presented, sold=sold,
+                quality_sum_presented=presented * quality,
+                quality_sq_sum_presented=presented * quality * quality,
+                quality_sum_sold=sold * quality,
+                quality_sq_sum_sold=sold * quality * quality,
             ))
 
         analysis = analyse(experiment, aggregates, bayesian=False)
@@ -183,14 +183,14 @@ def simulate(experiment: Experiment, params: SimulationInput) -> SimulationResul
         elasticity_sd=math.sqrt(var_eps),
         elasticity_coverage=covered / reps,
         true_best_cell=best_cell,
-        true_best_rac=true_rac[best_cell],
-        per_cell_true_take_up=true_take_up,
+        true_best_contribution=true_contribution[best_cell],
+        per_cell_true_sell_through=true_sell_through,
         assumptions={
             "true_elasticity": params.true_elasticity,
-            "baseline_take_up": params.baseline_take_up,
+            "baseline_sell_through": params.baseline_sell_through,
             "total_volume": params.total_volume,
             "replications": params.replications,
             "seed": params.seed,
-            "demand_model": "Elasticite constante q(p) = q_ref x (p / p_ref)^e",
+            "demand_model": "Elasticite constante s(p) = s_ref x (p / p_ref)^e",
         },
     )

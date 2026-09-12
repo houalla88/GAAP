@@ -2,11 +2,11 @@
 
 # GAAP
 
-**G**ouvernance, **A**rbitrage et **A**udit du **P**rix
+**G**ouvernance · **A**rbitrage · **A**udit · **P**rix
 
-*L'élasticité-prix n'est pas dans votre historique. Elle est dans une expérience.*
+*Dans votre historique, le prix n'a jamais été fixé au hasard. C'est tout le problème.*
 
-[![Tests](https://img.shields.io/badge/tests-162%20passants-09806c)](tests/)
+[![Tests](https://img.shields.io/badge/tests-172%20passants-09806c)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-09806c)](pyproject.toml)
 [![Dépendances](https://img.shields.io/badge/moteur-stdlib%20uniquement-5439b4)](gaap/domain/)
 [![Licence](https://img.shields.io/badge/licence-MIT-525a6b)](LICENSE)
@@ -19,40 +19,46 @@
 
 ## Ce que fait l'outil
 
-**GAAP teste des prix en production.** Plusieurs tarifs servis en parallèle à des populations
-comparables, affectées aléatoirement, avec la règle de décision écrite avant que le premier client
-ne voie une offre. Le verdict est exprimé en euros de marge ajustée du risque.
+**GAAP teste des prix en rayon, sur les fruits et légumes.** Plusieurs prix servis en parallèle à
+des volumes comparables, affectés aléatoirement, avec la règle de décision écrite avant que la
+première étiquette ne soit imprimée. Le verdict est exprimé en euros de marge par kilo mis en rayon.
 
 ## Pourquoi tester plutôt que modéliser
 
-Parce que votre historique ne peut pas répondre à la question.
+L'historique répond rarement à la question à lui seul.
 
-Vous pouvez construire le modèle d'élasticité et l'ajuster sur trois ans de données. Il sortira un
-chiffre, et ce chiffre sera faux d'une manière qu'aucune statistique d'ajustement ne révèle. Dans
-votre historique, le prix n'a jamais été fixé au hasard : il a bougé avec la concurrence, l'appétit
-au risque, le calendrier marketing, la courbe de refinancement, soit exactement les forces qui ont
-fait bouger la demande. L'estimation mélange donc l'effet du prix et l'effet de ce qui a fait changer le
-prix. C'est le problème d'identification de l'estimation de la demande, et ajouter des variables de
-contrôle ne le résout pas : les facteurs confondants qui comptent sont ceux que personne n'a
+Dans votre historique de rayon, le prix n'a pas été fixé au hasard. Il a bougé avec le cours du
+cadran, la concurrence, le calendrier promotionnel et l'état du stock, soit les forces qui ont
+également fait bouger la demande. Une régression de l'écoulement sur les prix passés mélange donc
+l'effet du prix et l'effet de ce qui a fait changer le prix. C'est le problème d'identification de
+l'estimation de la demande, posé par Working (1927) et inchangé depuis. Ajouter des variables de
+contrôle ne le règle pas : les facteurs confondants qui comptent sont ceux que personne n'a
 enregistrés.
 
-L'affectation aléatoire coupe ce lien. C'est le seul plan qui rende causal l'effet mesuré, et il
-coûte peu au regard de l'alternative, qui est de découvrir après un repositionnement tarifaire que
-l'élasticité réelle valait le double de celle du modèle.
+L'identification observationnelle reste possible et mérite d'être tentée quand les conditions sont
+réunies : un instrument adossé à un choc de cours amont, une régression sur discontinuité à un seuil
+de calibre, une différence de différences autour d'un déploiement échelonné par magasin, ou une
+expérience naturelle telle qu'une rupture d'approvisionnement. Chacune repose sur une condition que
+les données ne permettent pas de vérifier. Une restriction d'exclusion est une hypothèse, pas un
+résultat, et un instrument faible ramène l'estimation vers les moindres carrés qu'il devait corriger
+(Bound, Jaeger & Baker, 1995). Une discontinuité n'identifie l'effet qu'au voisinage du seuil. Et
+tous estiment l'élasticité d'un assortiment passé dans des conditions passées.
+
+La randomisation fabrique la variation exogène au lieu d'espérer la trouver : sur la gamme courante,
+aux paliers de prix que vous choisissez, avec un effet causal par construction.
 
 ## Pourquoi la vitesse est l'enjeu
 
-Chaque semaine au mauvais prix est de la marge que personne ne récupère, et chaque semaine de test
-est de la marge dépensée volontairement. La boucle doit donc se fermer dès que les données le
-permettent, pas à la fin d'un trimestre : frontière d'arrêt séquentielle fixée avant le lancement,
-lecture bayésienne exprimée en euros par lead, et un laboratoire qui dit, avant le premier euro
-engagé, si le plan est seulement capable de conclure et ce que l'apprentissage coûtera au
-95e centile.
+Chaque semaine au mauvais prix est de la marge que personne ne récupère, et en produits frais c'est
+aussi du stock qui part à la benne. La boucle doit donc se fermer dès que les données le permettent :
+frontière d'arrêt séquentielle fixée avant le lancement, lecture bayésienne en euros par kilo, et un
+laboratoire qui dit, avant la première palette engagée, si le plan est seulement capable de conclure
+et ce que l'apprentissage coûtera au 95e centile.
 
 Aller vite n'est défendable que si la perte est bornée. C'est le rôle des garde-fous : aucune cellule
-sous le plancher de rentabilité, un plafond sur le trafic exposé, une tolérance de perte par cellule
+sous le plancher de rentabilité, un plafond sur le volume exposé, une tolérance de perte par kilo
 fixée avant tout résultat, et une piste d'audit qui rend rejouable, à partir du seul sel, le prix
-servi à un client donné il y a dix-huit mois.
+affiché sur un lot donné.
 
 **Tester, conclure, repositionner le prix, et savoir justifier la décision après coup.**
 
@@ -62,64 +68,58 @@ servi à un client donné il y a dix-huit mois.
 
 ---
 
-### Ce que le moteur refuse de rater
+### Le résultat qui résume tout
 
-Le prix qui convertit le mieux est le plus bas admissible, et il détruit souvent de la valeur. Dans
-le portefeuille ci-dessus, la cellule à −45 bps convertit à **7,87 %** et rapporte **10,25 € par lead
-exposé** ; celle à +90 bps convertit à 4,04 % et rapporte **21,65 €**. Même population, marge
-doublée, pour une décision que le taux de conversion prend à l'envers.
+Tomates grappe, quatre paliers de prix, 68 000 kilos mis en rayon :
 
-GAAP tranche donc sur la contribution ajustée du risque, soit take-up × (taux − plancher de
-rentabilité) × capital × durée, et écrit cet arbitrage dans sa motivation au lieu de le masquer. Et chaque
-recommandation porte ses réserves : extrapolation hors de l'enveloppe des prix testés, PD d'octroi
-qui n'est pas la perte constatée, effet mesuré sur la seule fenêtre du test. Une recommandation
-tarifaire livrée sans ses limites est une recommandation incomplète.
+| Prix | Écoulement | Casse | Plancher à la rotation observée | **Marge par kilo présenté** |
+|---|---|---|---|---|
+| 2,75 € | **85,5 %** | **14,5 %** | 2,296 € | 0,388 € |
+| 2,95 € (contrôle) | 82,1 % | 17,9 % | 2,388 € | 0,461 € |
+| **3,15 €** | 78,2 % | 21,8 % | 2,502 € | **0,507 €** |
+| 3,35 € | 72,0 % | 28,0 % | 2,708 € | 0,462 € |
 
----
+La cellule la moins chère écoule le mieux, **et** casse le moins, **et** rapporte le moins. Un
+objectif d'écoulement la désignerait. Un objectif de réduction du gaspillage la désignerait aussi.
+Les deux se tromperaient de 12 % de marge.
+
+Et la meilleure cellule n'est pas non plus la plus chère : à 3,35 € la rotation s'effondre, le
+plancher grimpe à 2,708 €, et la marge gagnée part à la benne. La courbe de contribution a un maximum
+intérieur, et le moteur le trouve.
 
 ### Le nom
 
-Chaque lettre porte un pilier du système : la **gouvernance** refuse par défaut ce qui n'est pas
-admissible, l'**arbitrage** tranche le compromis volume / marge, l'**audit** rend chaque décision et
-chaque affectation rejouables, le tout appliqué au **prix**.
-
-L'acronyme est aussi un clin d'œil assumé aux *Generally Accepted Accounting Principles*, et il dit
-la même intention : appliquer au prix l'exigence que la comptabilité applique aux comptes : des
-règles fixées **avant** les faits, une piste d'audit, et une opinion motivée plutôt qu'un chiffre nu.
+Chaque lettre porte un pilier : la **gouvernance** refuse par défaut ce qui n'est pas admissible,
+l'**arbitrage** tranche le compromis volume contre marge, l'**audit** rend chaque décision et chaque
+affectation rejouables, le tout appliqué au **prix**. L'acronyme est aussi un clin d'œil aux
+*Generally Accepted Accounting Principles*, et il dit la même intention : des règles fixées **avant**
+les faits, une piste d'audit, et une opinion motivée plutôt qu'un chiffre nu.
 
 ---
 
 ## Pourquoi un test de prix n'est pas un test de bouton
 
-| | Test visuel | Test tarifaire |
+| | Test visuel | Test de prix sur du périssable |
 |---|---|---|
-| **Réversibilité** | Un retour arrière annule tout. | Les contrats signés portent le prix testé pendant toute leur durée de vie. |
-| **Coût pendant le test** | Marginal. | Chaque cellule sous-tarifée consomme de la marge en temps réel. |
-| **Métrique** | Le taux de conversion suffit. | Le prix qui convertit le mieux est le plus bas admissible. Il détruit souvent de la valeur. |
-| **Population** | Stable. | Le prix **sélectionne** les demandeurs : baisser attire les bons risques, monter attire les mauvais. |
-| **Contrainte** | Esthétique. | Plancher de rentabilité, capital réglementaire, interdiction de segmenter sur un critère protégé. |
-
-C'est cette asymétrie que GAAP encode. Un outil d'A/B testing généraliste branché sur un prix
-donnera régulièrement la mauvaise réponse, non par défaut de rigueur statistique, mais parce qu'il
-optimise la mauvaise grandeur.
+| **Réversibilité** | Un retour arrière annule tout. | La palette qui ne s'est pas vendue est à la benne. |
+| **Coût pendant le test** | Marginal. | Chaque cellule qui tourne mal brûle du stock en temps réel. |
+| **Métrique** | Le taux de conversion suffit. | Le prix qui écoule le mieux est le plus bas admissible. Il détruit souvent de la marge. |
+| **Structure de coût** | Fixe. | **Le plancher dépend du prix**, parce que la rotation en dépend et que la casse suit la rotation. |
+| **Population** | Stable. | Le prix **sélectionne** : plus cher, le client devient exigeant et le stock résiduel se dégrade. |
 
 ---
 
 ## Les cinq situations du jeu de démonstration
 
-Elles coexistent volontairement dans le portefeuille ci-dessus, parce que ce sont les cinq qu'un
-moteur d'expérimentation tarifaire doit savoir traiter et que la plupart des outils d'A/B testing
-traitent mal :
-
-1. **Une bascule prouvée contre le taux de conversion.** La cellule qui convertit le moins est
-   celle qui rapporte le plus.
-2. **Un arrêt de protection déclenché avant terme.** À 39 % d'information seulement, une cellule
-   dépasse la tolérance de perte fixée avant le lancement. GAAP coupe la cellule, pas l'expérience.
-3. **Un test sans effet économique malgré un écart de conversion significatif** (z = −3,92).
-   Conclure sur la conversion aurait conduit à une décision que la contribution ne justifie pas.
-4. **Un plan refusé avant lancement** par six garde-fous bloquants.
-5. **Un test invalidé** par rupture d'allocation : les chiffres sont flatteurs, ils ne sont pas
-   lisibles.
+1. **Une bascule prouvée contre l'écoulement et contre la casse.** Le tableau ci-dessus.
+2. **Un test encore trop jeune pour être lu.** Fraises avec remise sur lot, à 40 % de l'information
+   prévue. L'effet paraît énorme, et la règle séquentielle interdit toujours de conclure.
+3. **Un test sans effet économique.** Carottes, cinq centimes de plus : intervalle sur la
+   contribution [−0,003 ; +0,013] € par kilo, compatible avec l'absence totale d'effet.
+4. **Un plan refusé avant lancement** par cinq garde-fous bloquants, dont une cellule sous le
+   plancher et un ciblage adossé à un critère protégé.
+5. **Un test invalidé.** Tomates cerises, SRM à p = 4 × 10⁻⁴⁰ après une rupture de réassort sur une
+   partie des magasins d'une cellule. Les chiffres semblent lisibles. Ils ne le sont pas.
 
 ---
 
@@ -131,62 +131,55 @@ traitent mal :
 u = uint64( SHA-256( sel ‖ espace ‖ identifiant )[0:8] ) / 2⁶⁴
 ```
 
-Une fonction pure du sel de l'expérience et de l'identifiant du sujet. Trois conséquences directes :
-
-- **Le client revoit le même prix.** Pas de consultation de base, pas de dérive entre deux visites.
-- **Toute affectation passée est rejouable.** Reconstituer l'offre faite à un client il y a dix-huit
-  mois ne demande que le sel et la version du plan, tous deux ancrés dans la piste d'audit. Aucune
-  table de plusieurs centaines de millions de lignes à conserver, donc aucune seconde vérité
-  susceptible de diverger de la première.
-- **Les expériences sont indépendantes.** Le sel étant propre à chaque test, un sujet est
-  re-randomisé de l'un à l'autre.
+Une fonction pure du sel de l'expérience et de l'identifiant de l'unité. Un même lot relève toujours
+de la même cellule, donc un magasin n'affiche jamais deux prix pour le même produit au même moment.
+Toute affectation passée est rejouable à partir du sel, donc aucune table d'affectation n'existe pour
+diverger du journal. Et le sel étant propre à chaque expérience, une unité est re-randomisée d'un
+test à l'autre.
 
 ```bash
-flask replay pp-taeg-2026q3 CLI-8842910
-# Expérience : pp-taeg-2026q3 (Prêt personnel 12 500 EUR - échelle de TAEG)
-# Sel        : pp-taeg-2026q3-0f4c9a
-# Tirage     : 0.467401937101
-# Cellule    : m45 - Affecté
-# Prix servi : 6,45 %
+flask replay tomate-grappe-2026s37 LOT-0042117
+# Experience   : tomate-grappe-2026s37 (Tomates grappe - echelle de prix)
+# Sel          : tomate-grappe-2026s37-0f4c9a
+# Unite        : LOT-0042117
+# Tirage       : 0.467401937101
+# Cellule      : m20 - Affecte
+# Prix affiche : 2.75 EUR/kg
 ```
 
-Deux flux aléatoires indépendants (`holdout` et `cell`) : mélanger les deux corrélerait le groupe
-témoin au prix, un biais qui n'apparaît dans aucun total.
-
-### 2. Le plancher de rentabilité, avant tout le reste
+### 2. Un plancher de rentabilité qui bouge avec le prix
 
 ```
-r_plancher = f + o + PD × LGD + k × (h − f),    k = RW × ratio CET1
+p_plancher = a / s − v × (1 − s) / s + c
 ```
 
-Refinancement, coûts opérationnels, perte attendue (Bâle / IFRS 9) et charge en capital. Une cellule
-positionnée sous ce seuil détruit de la valeur actionnariale même si elle est comptablement
-profitable, et GAAP **refuse de la lancer** plutôt que de le constater après coup.
+Coût d'acquisition par kilo vendable, casse attendue, valeur de sauvetage, immobilisation du stock.
+Le quatrième terme est le jumeau structurel d'une perte de crédit attendue : une probabilité d'échec,
+`(1 − s)`, multipliée par la perte encourue, `a − v`.
 
-La propriété qui rend le modèle cohérent : **au prix plancher, le RAROC vaut exactement le coût des
-fonds propres.** Elle est vérifiée par la suite de tests, et c'est elle qui a révélé qu'une première
-version facturait à tort le refinancement sur la part d'encours financée par fonds propres.
+**Et le plancher dépend du prix**, parce que la rotation en dépend et que la casse suit la rotation.
+Sur les données de démonstration il passe de 2,08 €/kg à 95 % d'écoulement à 2,99 €/kg à 65 %. GAAP
+le recalcule donc à la rotation **observée** de chaque cellule. Comparer une cellule chère, qui tourne
+lentement et casse davantage, à un plancher construit sur la rotation du contrôle la flatterait
+mécaniquement.
 
 ![Fiche d'expérience](docs/assets/02-experience-verdict.png)
 
-### 3. La décision porte sur la contribution, pas sur la conversion
+### 3. La décision porte sur la contribution
 
 ```
-RAC = take-up × (r_effectif − r_plancher) × K × D
+C = écoulement × (prix effectif − plancher)
 ```
 
-Contribution ajustée du risque par lead exposé. C'est la **seule** métrique sur laquelle GAAP
-autorise une bascule. Sur la capture ci-dessus, la cellule à −45 bps convertit à 7,87 % contre
-4,04 % pour la cellule à +90 bps, et rapporte 10,25 € contre 21,65 € par lead. GAAP tranche sur la
-seconde grandeur, et l'écrit dans sa motivation.
-
-Les frais de dossier sont convertis en équivalent-taux (`frais / (K × D)`) : les deux leviers de
-prix vivent sur la même échelle, parce qu'ils touchent la même poche du client.
+Des euros par kilo **mis en rayon**, et non par kilo vendu : c'est le kilo présenté qui est engagé,
+donc c'est lui qui doit porter le rendement. De façon équivalente, `C = s × V + K`, où `V` est ce que
+rapporte de vendre un kilo plutôt que de le jeter et `K` la perte sèche d'un invendu. La variance vaut
+alors exactement `s(1−s)V²`, donc les intervalles se calculent sans jamais relire une observation.
 
 ### 4. Les garde-fous refusent par défaut
 
-Une expérience est **refusée jusqu'à preuve du contraire**. Huit contrôles avant lancement, cinq en
-production, chacun portant un code stable repris dans la piste d'audit.
+Huit contrôles avant lancement, cinq en production, chacun portant un code stable repris dans la
+piste d'audit.
 
 ![Plan refusé par les garde-fous](docs/assets/03-garde-fous-refus.png)
 
@@ -194,18 +187,18 @@ production, chacun portant un code stable repris dans la piste d'audit.
 |---|---|---|
 | `ECO_FLOOR` | Aucune cellule sous le plancher de rentabilité | Bloquant |
 | `ECO_BAND` | Amplitude tarifaire dans la bande autorisée | Bloquant |
-| `RISK_EXPOSURE` | Part du trafic exposée plafonnée | Bloquant |
+| `RISK_EXPOSURE` | Part du volume exposée plafonnée | Bloquant |
 | `COMP_PROTECTED` | Aucun ciblage adossé à un critère de discrimination prohibé | Bloquant |
 | `GOV_FOUR_EYES` | Le concepteur du plan ne le valide pas lui-même | Bloquant |
-| `STAT_POWER` | Volume suffisant pour détecter l'effet déclaré | Bloquant sous 50 % du requis, avertissement au-delà |
+| `STAT_POWER` | Volume suffisant pour détecter l'effet déclaré | Bloquant sous 50 % du requis |
 | `STAT_HOLDOUT` | Groupe témoin préservé | Avertissement |
 | `PLAN_DURATION` | Durée bornée | Avertissement |
 
-En production s'ajoutent le contrôle SRM, la tolérance de perte par lead (un *stop-loss* tarifaire
-fixé **avant** de voir les résultats) et la détection d'anti-sélection.
+En production s'ajoutent le contrôle SRM, la tolérance de perte par kilo fixée **avant** tout
+résultat, la détection de sélection par la qualité, et `ECO_FLOOR_LIVE`, qui attrape une cellule
+passée sous son plancher sans qu'aucun prix n'ait bougé, simplement parce qu'elle a cessé de tourner.
 
-Un plan en production est **figé** : ni les cellules, ni les poids, ni le sel ne sont modifiables.
-Modifier un plan en cours mélange deux expériences dans un même jeu de données.
+Un plan en production est **figé** : cellules, poids et sel ne sont plus modifiables.
 
 ### 5. Tout est scellé
 
@@ -215,17 +208,12 @@ Modifier un plan en cours mélange deux expériences dans un même jeu de donné
 h_n = SHA-256( h_{n−1} ‖ horodatage ‖ acteur ‖ événement ‖ sujet ‖ contenu canonique )
 ```
 
-Journal en ajout seul. Modifier ou supprimer une entrée ancienne invalide toutes les suivantes, et
-la vérification nomme le premier rang rompu **et** la nature de la rupture : chaînage (une entrée a
-disparu) ou empreinte (un contenu a été réécrit).
+Journal en ajout seul. Modifier ou supprimer une entrée ancienne invalide toutes les suivantes, et la
+vérification nomme le premier rang rompu ainsi que la nature de la rupture : chaînage, une entrée a
+disparu, ou empreinte, un contenu a été réécrit.
 
-Ce n'est pas une blockchain et ne prétend pas l'être : ni consensus, ni horodatage tiers. C'est un
-journal **infalsifiable en silence**, ce qui est la propriété réellement utile pour un contrôle
-interne.
-
-Ce qui est journalisé : conception, modification, validation, activation, refus par garde-fou,
-suspension, décision rendue, conclusion. Ce qui ne l'est pas : les affectations individuelles,
-qui sont rejouables. Les journaliser créerait une seconde vérité.
+Les affectations individuelles ne sont pas journalisées. Elles sont rejouables, et les journaliser
+créerait une seconde vérité.
 
 ---
 
@@ -233,19 +221,17 @@ qui sont rejouables. Les journaliser créerait une seconde vérité.
 
 ![Laboratoire GAAP](docs/assets/04-laboratoire.png)
 
-Un test tarifaire consomme de la marge pendant qu'il tourne. Le lancer sans savoir s'il peut
-conclure revient à payer une information qu'on n'obtiendra pas.
-
 Le laboratoire rejoue le plan quelques centaines de fois sous une élasticité supposée et répond à
-trois questions :
+trois questions : le plan est-il seulement capable de conclure, que coûte l'apprentissage au 95e
+centile plutôt qu'en moyenne, et avec quelle précision l'élasticité sera-t-elle mesurée. Une
+couverture d'intervalle à 80 % au lieu de 95 % signale des intervalles qui mentent, défaut plus grave
+qu'un manque de puissance.
 
-- **Ce plan peut-il conclure ?** Sur la capture : 67 % de chances de basculer sur la bonne cellule,
-  et 25 % de basculer sur une cellule sous-optimale. Ce second chiffre est le plus intéressant : il
-  ne figure sur aucun plan d'expérience classique.
-- **Combien coûte l'apprentissage ?** La distribution, pas seulement la moyenne. C'est le P95 qui se
-  défend en comité.
-- **Avec quelle précision mesurera-t-on l'élasticité ?** Une couverture d'intervalle à 80 % au lieu
-  de 95 % signale des intervalles qui mentent, défaut plus grave qu'un manque de puissance.
+La capture ci-dessus est le cas qui mérite d'être montré. Sous une élasticité supposée de
+-1,0, ce plan aboutit à une décision dans toutes les réplications et désigne la cellule qui
+maximise la contribution dans 5 % d'entre elles. L'écart entre cellules est trop faible pour
+être lu à 72 000 kilos, si bien que le moteur conserve le prix courant 91 % du temps. C'est la
+bonne réponse compte tenu des données, et une bonne raison de ne pas lancer ce plan tel quel.
 
 Graine fixée : deux exécutions sur les mêmes hypothèses donnent le même résultat.
 
@@ -255,13 +241,11 @@ Graine fixée : deux exécutions sur les mêmes hypothèses donnent le même ré
 
 ![Nouveau plan](docs/assets/06-nouveau-plan.png)
 
-Le dimensionnement se recalcule pendant la saisie. Un plan sous-dimensionné découvert trois semaines
-après le lancement est un plan perdu.
+Le dimensionnement se recalcule pendant la saisie.
 
-> Enseignement du jeu de démonstration, et il est instructif : détecter **8 % relatif** sur un
-> take-up de 6 % avec quatre cellules demande **52 000 leads par cellule**. Les volumes réalistes du
-> portefeuille ne permettent de déclarer qu'un MDE de 15 à 18 %. GAAP force à l'écrire dans le plan
-> plutôt qu'à le découvrir dans les résultats.
+> Détecter **5 % relatif** sur un écoulement de 82 % avec quatre cellules demande environ **1 700
+> kilos par cellule**. Bien plus facile que le crédit, où un take-up de 6 % exigeait des dizaines de
+> milliers de leads par bras. Un taux de succès élevé se mesure à bon marché.
 
 ---
 
@@ -278,54 +262,34 @@ flask seed --reset        # portefeuille de démonstration, données 100 % synth
 python run.py             # http://127.0.0.1:5000
 ```
 
-En production, servir par un serveur WSGI et définir `GAAP_SECRET_KEY` :
-
 ```bash
 gunicorn "gaap:create_app('production')" --bind 0.0.0.0:8000 --workers 4
 ```
 
-Sans `GAAP_SECRET_KEY`, l'application démarre avec une clé éphémère **et le signale dans ses
-journaux**. Défaut bruyant, donc visible.
+Sans `GAAP_SECRET_KEY`, l'application démarre avec une clé éphémère et le signale dans ses journaux.
 
 ### Ligne de commande
 
 ```bash
-flask report pp-taeg-2026q3           # lecture complète d'une expérience en console
-flask replay pp-taeg-2026q3 CLI-4821  # quel prix a été servi à ce client, et pourquoi
-flask verify-ledger                   # recalcule la chaîne d'empreintes (code de sortie 1 si rompue)
+flask report tomate-grappe-2026s37              # lecture complète en console
+flask replay tomate-grappe-2026s37 LOT-0042117  # quel prix ce lot portait, et pourquoi
+flask verify-ledger                             # recalcule la chaîne d'empreintes
 ```
-
-Le même moteur est accessible par l'interface, l'API et la ligne de commande : un contrôleur peut
-vérifier la piste d'audit sans dépendre du bon fonctionnement de l'application web.
 
 ---
 
 ## API
 
-L'interface web ne consomme rien d'autre que ces routes. Ce qui est affiché est exportable, et
-aucune divergence n'est possible entre ce que voit un analyste et ce qu'extrait un contrôleur.
-
 | Route | Usage |
 |---|---|
-| `POST /api/v1/assign` | **Chemin critique.** Affecte un sujet et retourne le prix à servir. |
-| `POST /api/v1/observations` | Enregistre l'issue commerciale d'un lead exposé. |
+| `POST /api/v1/assign` | Affecte une unité et retourne le prix à afficher. |
+| `POST /api/v1/observations` | Enregistre l'issue d'un kilo mis en rayon : vendu ou cassé. |
 | `GET /api/v1/experiments/<clé>/report` | Rapport complet : cellules, tests, élasticité, garde-fous, recommandation. |
 | `POST /api/v1/design/power` | Dimensionnement : taille requise et effet détectable. |
 | `GET /api/v1/ledger/verify` | Vérification de la chaîne d'empreintes. |
 
-```bash
-curl -s -X POST localhost:5000/api/v1/assign \
-     -H 'Content-Type: application/json' \
-     -d '{"experiment":"pp-taeg-2026q3","subject_id":"CLI-8842910"}'
-```
-```json
-{"cell": "m45", "rate": 0.0645, "fee": 0.0, "outcome": "assigned",
- "bucket": 0.467401937101, "in_analysis": true, "reason": ""}
-```
-
-`/assign` **retourne toujours un prix.** Expérience inactive, sujet hors périmètre, segment exclu :
-c'est le prix de référence qui est servi, avec le motif. Un moteur de tarification ne doit jamais
-avoir à gérer une absence de réponse de GAAP.
+`/assign` **retourne toujours un prix.** Expérience inactive, unité hors périmètre, segment exclu :
+c'est le prix de référence qui est renvoyé, avec le motif.
 
 ---
 
@@ -335,11 +299,11 @@ avoir à gérer une absence de réponse de GAAP.
 gaap/
 ├── domain/              Python pur, aucune dépendance à Flask ni à la base
 │   ├── stats.py         lois, intervalles, tests, dimensionnement, séquentiel, bayésien
-│   ├── pricing.py       plancher ajusté du risque, contribution, RAROC, règle de Lerner
+│   ├── pricing.py       plancher ajusté de la casse, contribution, règle de Lerner
 │   ├── allocation.py    affectation déterministe par hachage
-│   ├── analysis.py      lecture d'une expérience : SRM → take-up → contribution → élasticité
+│   ├── analysis.py      SRM → écoulement → contribution → élasticité
 │   ├── guardrails.py    ce que le moteur refuse, avant et pendant
-│   ├── decision.py      politique de décision (séparée de la mesure, à dessein)
+│   ├── decision.py      politique de décision, séparée de la mesure à dessein
 │   └── models.py        entités immuables
 ├── infrastructure/      SQLite, dépôts, piste d'audit chaînée
 ├── services/            cycle de vie gouverné, analyse, laboratoire, affectation
@@ -347,21 +311,15 @@ gaap/
 └── web/                 vues, gabarits, graphiques SVG générés côté serveur
 ```
 
-Deux décisions structurantes méritent d'être défendues :
+**Le moteur n'utilise que la bibliothèque standard.** Ni numpy, ni scipy. Les lois du χ², de Student
+et la normale inverse y sont implémentées et vérifiées contre des valeurs publiées, pour qu'un
+contrôle interne puisse relire la formule appliquée sans traverser une pile numérique compilée.
 
-**Le moteur n'utilise que la bibliothèque standard.** Ni numpy, ni scipy, ni pandas. Un contrôle
-interne doit pouvoir relire la formule appliquée sans traverser une pile numérique compilée, et un
-résultat de tarification ne doit pas dépendre d'une version de BLAS. Les lois du χ², de Student et
-la normale inverse sont implémentées et vérifiées contre des valeurs de référence publiées.
-
-**Les graphiques sont des SVG générés côté serveur.** Aucun CDN, aucun script en ligne. C'est ce qui
-rend tenable une politique de sécurité de contenu stricte (`default-src 'self'`, sans
-`unsafe-inline` ni exception), vérifiée par un test qui échoue si un gabarit réintroduit un style en
-ligne.
+**Les graphiques sont des SVG générés côté serveur.** Aucun CDN, aucun script en ligne, ce qui rend
+tenable une politique de sécurité de contenu stricte, vérifiée par un test qui échoue si un gabarit
+réintroduit un style en ligne.
 
 **Mesure et décision sont séparées.** `analysis.analyse()` mesure, `decision.recommend()` tranche.
-C'est ce qui permet de rejouer une politique de décision différente sur des mesures inchangées : la
-seule manière honnête de comparer deux règles d'arrêt.
 
 ---
 
@@ -369,48 +327,42 @@ seule manière honnête de comparer deux règles d'arrêt.
 
 | Question | Méthode | Pourquoi celle-là |
 |---|---|---|
-| Intervalle sur un take-up | Score de Wilson (1927) | Conserve sa couverture aux faibles taux, le régime d'un take-up de crédit |
-| Écart entre deux take-up | Newcombe (1998), méthode 10 | Couverture correcte quand un bras est volontairement peu exposé |
-| Écart de contribution | Test *t* de Welch | La variance dépend du prix de la cellule : l'homoscédasticité est fausse par construction |
-| Comparaisons multiples | Bonferroni | Sans correction, le risque familial atteint 14 % pour trois variantes |
-| Intégrité de l'allocation | χ² d'adéquation, seuil p < 0,001 | Un échec invalide tout, quelle que soit l'apparence des chiffres |
-| Arrêt anticipé | O'Brien-Fleming (Lan-DeMets) | Règle écrite avant le test, opposable, qui protège du *peeking* |
-| Lecture bayésienne | Posteriors Beta sur la **contribution** | Répond à « quelle probabilité de me tromper en basculant ? » |
-| Élasticité | Régression log-log pondérée | Poids = inverse de la variance de `ln p` par la méthode delta |
+| Intervalle sur un écoulement | Score de Wilson (1927) | Conserve sa couverture aux taux extrêmes |
+| Écart entre deux taux | Newcombe (1998), méthode 10 | Couverture correcte quand un bras est peu exposé |
+| Écart de contribution | Test *t* de Welch | La variance dépend de `V²`, donc l'homoscédasticité est fausse |
+| Comparaisons multiples | Bonferroni | Sans correction, le risque familial atteint 14 % |
+| Intégrité de l'allocation | χ², seuil p < 0,001 | Un échec invalide tout |
+| Arrêt anticipé | O'Brien-Fleming (Lan-DeMets) | Règle écrite avant le test, opposable |
+| Lecture bayésienne | Posteriors Beta sur la **contribution** | Répond à « quelle probabilité de me tromper ? » |
+| Élasticité | Régression log-log pondérée | Poids = inverse de la variance de `ln s` |
 
-Deux points méritent d'être soulignés parce qu'ils sont souvent mal faits :
+**La frontière séquentielle porte sur la contribution, pas sur l'écoulement.**
 
-**La frontière séquentielle porte sur la contribution, pas sur la conversion.** Protéger du peeking
-la statistique sur laquelle on ne décide pas n'a aucun sens. Le jeu de démonstration contient le cas
-qui le démontre : un écart de take-up statistiquement significatif (z = −3,92) mais économiquement
-neutre, avec un intervalle sur la contribution de [−1,76 ; +4,19] € par lead. Conclure sur la conversion
-aurait conduit à une décision que la contribution ne justifie pas.
+**Le prix optimal théorique est borné à l'enveloppe des prix testés.** La règle de Lerner traite en
+outre le coût comme une constante, ce qu'il n'est pas ici : GAAP le donne comme une direction, jamais
+comme une valeur à appliquer.
 
-**Le prix optimal théorique est borné à l'enveloppe des prix testés.** La règle de Lerner
-`(p* − c)/p* = −1/e` extrapole une élasticité estimée sur quelques paliers à toute la courbe. GAAP
-calcule cette valeur, la signale comme extrapolation quand elle sort de l'enveloppe, et refuse de
-s'en servir seule. Sortir de l'enveloppe, c'est remplacer une mesure par une hypothèse de forme
-fonctionnelle.
-
-La note de méthode complète est accessible **dans l'application** (`/methode`), parce qu'une méthode qu'il
-faut aller chercher ailleurs n'est pas opposable.
+Note de méthode complète dans l'application (`/methode`) et dans
+[`docs/METHODOLOGIE.md`](docs/METHODOLOGIE.md).
 
 ---
 
 ## Ce que GAAP ne mesure pas
 
-Cette section est aussi importante que les précédentes, et chaque recommandation la rappelle :
+- **L'effet de gamme.** Une baisse sur les tomates grappe déplace la demande des tomates cerises. Le
+  test mesure un produit, pas un rayon.
+- L'effet du prix sur la fréquentation et le panier moyen.
+- La saisonnalité et les effets de nouveauté au-delà de la fenêtre du test.
+- **Le couplage prix / quantité commandée.** La quantité mise en rayon est traitée comme donnée.
+  L'optimiser conjointement au prix relève du problème du vendeur de journaux à prix endogène
+  (Petruzzi & Dada, 1999). C'est la limite la plus sérieuse du modèle.
+- Le comportement des magasins exclus par garde-fou, non observés par construction.
+- La démarque réellement constatée : seule la casse attendue entre dans le calcul.
 
-- La **réaction de la concurrence** à un changement de prix généralisé.
-- L'effet du prix sur la **valeur client à long terme** : multi-détention, attrition, refinancement.
-- La **saisonnalité** et les effets de nouveauté au-delà de la fenêtre du test.
-- Le comportement des clients **exclus par garde-fou**, par construction non observés.
-- La **perte réellement constatée** : seule la perte attendue à l'octroi entre dans le calcul. Toute
-  conclusion sur le mélange de risque doit être confirmée sur les cohortes à douze mois.
-
-L'anti-sélection est *détectée* par comparaison de la PD moyenne des dossiers acceptés entre
-cellules, mais la PD utilisée est celle du modèle de score au moment de l'offre. Elle anticipe la
-perte, elle ne la constate pas.
+Une limite mérite sa propre ligne, parce qu'elle découle d'un choix de conception : **les kilos d'un
+même lot ne sont pas indépendants.** Ils partagent une implantation, une fraîcheur de départ et un
+flux client. Les intervalles calculés sous hypothèse binomiale sont donc optimistes, et un correctif
+d'effet de grappe s'appliquerait en production. Chaque recommandation du moteur porte cette réserve.
 
 ---
 
@@ -418,52 +370,35 @@ perte, elle ne la constate pas.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest                    # 162 tests, ~10 s
+pytest                    # 172 tests, ~9 s
 ```
 
-La suite ne vérifie pas des comportements mais des **propriétés** : stabilité de l'affectation,
-uniformité du hachage, indépendance des flux aléatoires, cohérence du plancher et du RAROC,
-détection de falsification de la piste d'audit, refus des transitions de cycle de vie illégales.
-
-Les valeurs statistiques de référence proviennent de tables publiées, pas d'une exécution antérieure
-du code : un test qui compare le code à lui-même ne vérifie rien.
-
-Un test épingle l'empreinte d'affectation de huit sujets. Il échoue si une modification du hachage
-déplace un sujet. C'est volontaire : changer la fonction d'affectation invalide silencieusement
-toute expérience en cours, et doit donc être un acte délibéré.
-
-Les captures d'écran de ce document sont régénérées par `python3 scripts/capture_screens.py` : une
-capture faite à la main devient fausse dès la première évolution de l'interface, et personne ne s'en
-aperçoit.
+La suite vérifie des **propriétés**, pas des comportements : stabilité de l'affectation, uniformité du
+hachage, indépendance des flux aléatoires, cohérence du plancher, détection de falsification du
+journal, refus des transitions de cycle de vie illégales. Les valeurs statistiques de référence
+proviennent de tables publiées, pas d'une exécution antérieure du code.
 
 ---
 
 ## Données de démonstration
 
-**Toutes les données du portefeuille sont synthétiques.** Aucun client, aucun contrat, aucun encours
-réel. Les ordres de grandeur (taux de refinancement, PD, LGD, pondération de risque, take-up) sont
-choisis pour être plausibles sur un marché de crédit à la consommation européen ; ils ne constituent
-ni une référence de marché, ni une recommandation tarifaire.
-
-Le générateur est explicite et paramétré : demande à élasticité constante, plus un terme
-d'anti-sélection qui fait dépendre l'acceptation du risque du demandeur lorsque le prix s'écarte de
-la référence (`gaap/demo.py`).
+**Tous les chiffres sont synthétiques.** Aucun fournisseur, aucun magasin, aucun volume réel. Les
+ordres de grandeur sont choisis pour être plausibles chez un distributeur alimentaire européen ; ils
+ne constituent ni une référence de marché, ni une recommandation tarifaire.
 
 ---
 
 ## Références
 
-- Kohavi, Tang & Xu (2020), *Trustworthy Online Controlled Experiments*, Cambridge University Press
-- Wilson (1927), *JASA* 22(158) : intervalle de score
-- Newcombe (1998), *Statistics in Medicine* 17(8) : différence de proportions
+- Working (1927), *QJE* 41(2) : le problème d'identification de la demande
+- Berry, Levinsohn & Pakes (1995), *Econometrica* 63(4) ; Bound, Jaeger & Baker (1995), *JASA* 90(430)
+- Angrist & Pischke (2009), *Mostly Harmless Econometrics*
+- Kohavi, Tang & Xu (2020), *Trustworthy Online Controlled Experiments*
+- Wilson (1927), *JASA* 22(158) ; Newcombe (1998), *Statistics in Medicine* 17(8)
 - O'Brien & Fleming (1979), *Biometrics* 35(3) ; Lan & DeMets (1983), *Biometrika* 70(3)
 - Fleiss, Levin & Paik (2003), *Statistical Methods for Rates and Proportions*
 - Lerner (1934), *Review of Economic Studies* 1(3)
-- Working (1927), *Quarterly Journal of Economics* 41(2) : « What do statistical demand curves
-  show ? », l'article fondateur sur le problème d'identification de la demande
-- Angrist & Pischke (2009), *Mostly Harmless Econometrics*, Princeton University Press : pourquoi
-  l'assignation aléatoire identifie un effet causal que l'observationnel ne peut pas identifier
-- Comité de Bâle (2017), *Bâle III : finalisation des réformes* ; IFRS 9, *Instruments financiers*
+- Petruzzi & Dada (1999), *Operations Research* 47(2) : tarification et problème du vendeur de journaux
 
 ---
 
@@ -471,7 +406,7 @@ la référence (`gaap/demo.py`).
 
 **[DataOptimization.be](https://www.dataoptimization.be)**
 
-<sub>Conseil en data science appliquée à la finance : pricing, sensibilité au prix,<br>
-risque de crédit, architecture analytique.</sub>
+<sub>Conseil en data science appliquée au pricing, à la sensibilité au prix,<br>
+au comportement client et à l'architecture analytique.</sub>
 
 </div>

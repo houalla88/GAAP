@@ -28,7 +28,7 @@
 
   function countCells() {
     var filled = 0;
-    form.querySelectorAll("[name='cell_rate']").forEach(function (field) {
+    form.querySelectorAll("[name='cell_price']").forEach(function (field) {
       if (String(field.value).trim() !== "") { filled += 1; }
     });
     return Math.max(2, filled);
@@ -47,8 +47,8 @@
 
   function refresh() {
     var payload = {
-      baseline_rate: number("baseline_rate", 6) / 100,
-      target_mde: number("target_mde", 15) / 100,
+      baseline_sell_through: number("baseline_sell_through", 82) / 100,
+      target_mde: number("target_mde", 5) / 100,
       alpha: number("alpha", 5) / 100,
       power: number("power", 80) / 100,
       cells: countCells(),

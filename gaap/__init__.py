@@ -5,7 +5,7 @@ Moteur d'experimentation tarifaire. Chaque lettre porte un pilier du systeme :
 - **Gouvernance** : garde-fous qui refusent par defaut, validation par un
   second intervenant, plan fige des l'activation.
 - **Arbitrage** : la decision tranche le compromis volume / marge sur la
-  contribution ajustee du risque, jamais sur le taux de conversion.
+  contribution ajustee du risque, jamais sur le seul ecoulement.
 - **Audit** : piste en ajout seul scellee par chaînage d'empreintes, et
   affectations rejouables sans table de correspondance.
 - **Prix** : l'objet du test.

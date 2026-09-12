@@ -15,12 +15,13 @@ from gaap.domain.stats import chi_square_goodness_of_fit
 
 
 class TestDeterminisme:
-    def test_meme_sujet_meme_cellule(self, plan):
-        """Un client qui revient doit revoir le meme prix - exigence commerciale
-        autant que reglementaire sur l'information precontractuelle."""
+    def test_meme_unite_meme_cellule(self, plan):
+        """Un meme lot doit toujours relever de la meme cellule : deux prix
+        affiches pour le meme produit au meme moment est une infraction a
+        l'information du consommateur."""
         for i in range(200):
-            sujet = f"CLI-{i:06d}"
-            assert assign(plan, sujet).cell_key == assign(plan, sujet).cell_key
+            unite = f"LOT-{i:06d}"
+            assert assign(plan, unite).cell_key == assign(plan, unite).cell_key
 
     def test_le_sel_re_randomise(self, plan):
         """Deux experiences differentes ne doivent pas reutiliser la meme partition."""
@@ -59,7 +60,7 @@ class TestUniformite:
 class TestIndependance:
     def test_temoin_et_cellule_sont_decorreles(self, plan):
         """Si les deux tirages partageaient un flux, le temoin serait correle au
-        prix - biais invisible dans les totaux et fatal a l'interpretation."""
+        prix, biais invisible dans les totaux et fatal a l'interpretation."""
         paires = [
             (uniform_bucket(plan.salt, "holdout", f"S{i}"),
              uniform_bucket(plan.salt, "cell", f"S{i}"))
@@ -74,29 +75,29 @@ class TestIndependance:
 
 class TestExclusions:
     def test_segment_exclu_recoit_le_prix_de_reference(self, plan):
-        protege = plan.with_status(plan.status, excluded_segments=("surendettement",))
-        result = assign(protege, "CLI-000001", segment="surendettement")
+        protege = plan.with_status(plan.status, excluded_segments=("magasins_pilotes",))
+        result = assign(protege, "LOT-000001", segment="magasins_pilotes")
         assert result.outcome is AllocationOutcome.EXCLUDED
-        assert result.rate == plan.control.rate
+        assert result.price == plan.control.price
         assert not result.in_analysis
 
     def test_exclusion_prime_sur_le_tirage(self, plan):
-        """L'ordre des controles garantit qu'un segment protege ne peut jamais
+        """L'ordre des controles garantit qu'un segment exclu ne peut jamais
         etre expose, meme si les poids sont mal configures."""
-        protege = plan.with_status(plan.status, excluded_segments=("fragile",))
+        protege = plan.with_status(plan.status, excluded_segments=("drive",))
         for i in range(500):
-            assert assign(protege, f"S{i}", segment="fragile").cell_key == plan.control.key
+            assert assign(protege, f"S{i}", segment="drive").cell_key == plan.control.key
 
     def test_hors_perimetre_quand_un_ciblage_existe(self, plan):
-        cible = plan.with_status(plan.status, targeting=("canal_direct",))
-        assert assign(cible, "S1", segment="courtier").outcome is AllocationOutcome.NOT_TARGETED
-        assert assign(cible, "S1", segment="canal_direct").outcome is AllocationOutcome.ASSIGNED
+        cible = plan.with_status(plan.status, targeting=("hypermarche",))
+        assert assign(cible, "S1", segment="proximite").outcome is AllocationOutcome.NOT_TARGETED
+        assert assign(cible, "S1", segment="hypermarche").outcome is AllocationOutcome.ASSIGNED
 
     def test_experience_inactive_sert_le_prix_courant(self, plan):
         brouillon = plan.with_status(ExperimentStatus.DRAFT)
         result = assign(brouillon, "S1")
         assert result.outcome is AllocationOutcome.NOT_LIVE
-        assert result.rate == plan.control.rate
+        assert result.price == plan.control.price
 
     def test_temoin_est_hors_analyse(self, plan):
         temoins = [
@@ -104,7 +105,7 @@ class TestExclusions:
             if assign(plan, f"S{i}").outcome is AllocationOutcome.HOLDOUT
         ]
         assert temoins
-        assert all(not t.in_analysis and t.rate == plan.control.rate for t in temoins)
+        assert all(not t.in_analysis and t.price == plan.control.price for t in temoins)
 
 
 def test_stabilite_inter_versions(plan):
@@ -115,5 +116,5 @@ def test_stabilite_inter_versions(plan):
     toute experience en cours, et doit donc etre un acte delibere.
     """
     assert [assign(plan, f"ancre-{i}").cell_key for i in range(8)] == [
-        "ctl", "m45", "m45", "m45", "ctl", "p45", "ctl", "ctl",
+        "ctl", "p20", "p20", "ctl", "m20", "m20", "ctl", "m20",
     ]

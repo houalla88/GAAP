@@ -233,11 +233,21 @@ def wilson_interval(successes: int, trials: int, alpha: float = 0.05) -> tuple[f
     """Intervalle de score de Wilson (1927).
 
     Prefere a l'intervalle de Wald : il reste dans [0, 1] et conserve sa
-    couverture nominale pour les faibles taux de conversion, ce qui est le
-    regime usuel d'un test tarifaire (take-up de 2 a 15 %).
+    couverture nominale au voisinage des bornes. C'est exactement le regime
+    d'un rayon de frais : l'ecoulement observe se situe entre 70 et 95 %, ou
+    l'intervalle de Wald deborde au-dela de 1 et sous-couvre.
     """
     if trials <= 0:
         return (0.0, 1.0)
+    if not 0 <= successes <= trials:
+        # Precondition violee : plus de succes que d'essais. En production c'est
+        # impossible, la base comptant les deux. Le signaler clairement vaut
+        # mieux que de bricher sur une racine negative, et mieux que de brider
+        # silencieusement une donnee incoherente.
+        raise ValueError(
+            f"wilson_interval : {successes} succes pour {trials} essais, "
+            "la donnee est incoherente."
+        )
     z = norm_ppf(1.0 - alpha / 2.0)
     p = successes / trials
     denom = 1.0 + z * z / trials
@@ -273,7 +283,7 @@ def newcombe_difference_interval(
 
 @dataclass(frozen=True)
 class ProportionTest:
-    """Resultat d'une comparaison de deux taux de conversion."""
+    """Resultat d'une comparaison de deux taux d'ecoulement."""
 
     rate_control: float
     rate_variant: float
@@ -351,7 +361,7 @@ def welch_ttest(
 ) -> MeanTest:
     """Test t de Welch (variances inegales).
 
-    C'est le test adapte a la marge par lead : la variance de la contribution
+    C'est le test adapte a la marge par kilo : la variance de la contribution
     depend du prix de la cellule, donc l'hypothese d'homoscedasticite du test
     de Student classique est fausse par construction dans un test tarifaire.
     """
@@ -531,7 +541,7 @@ def prob_b_beats_a(
 def expected_loss_choosing_b(
     successes_a: int, trials_a: int, successes_b: int, trials_b: int, draws: int = 20_000
 ) -> float:
-    """Perte attendue (en points de taux de conversion) si l'on bascule sur B.
+    """Perte attendue (en points d'ecoulement) si l'on bascule sur B.
 
     E[max(p_a - p_b, 0)] estimee par Monte-Carlo sur les posteriors Beta. La
     graine est derivee deterministiquement des comptages : deux executions sur
@@ -561,8 +571,8 @@ class ContributionPosterior:
 
     Attributes:
         probability: P(contribution_variante > contribution_controle).
-        expected_loss: perte attendue en euros par lead expose si l'on bascule
-            a tort, soit E[max(RAC_controle - RAC_variante, 0)].
+        expected_loss: perte attendue en euros par kilo presente si l'on bascule
+            a tort, soit E[max(C_controle - C_variante, 0)].
     """
 
     probability: float
@@ -574,21 +584,21 @@ def contribution_posterior(
     successes_b: int, trials_b: int, contribution_b: float,
     draws: int = 20_000,
 ) -> ContributionPosterior:
-    """Posterior sur la contribution, pas sur le taux de conversion.
+    """Posterior sur la contribution, pas sur le seul ecoulement.
 
     C'est la correction d'une erreur courante et couteuse : la probabilite
-    bayesienne habituelle repond a "la variante convertit-elle mieux ?", alors
+    bayesienne habituelle repond a "la variante ecoule-t-elle mieux ?", alors
     que la decision porte sur "la variante rapporte-t-elle plus ?". Sur un test
     tarifaire, les deux reponses sont regulierement opposees - une cellule plus
-    chere convertit moins et rapporte davantage.
+    chere ecoule moins et rapporte davantage.
 
-    La contribution par lead est p x c, ou c est une constante connue (marge par
-    contrat). On echantillonne donc les posteriors Beta des taux et on compare
+    La contribution par kilo presente est s x V + K, ou V et K sont des constantes
+    connues une fois le prix fixe (valeur d'une vente, et perte sur un invendu). On echantillonne donc les posteriors Beta des taux et on compare
     les produits. La graine est derivee des comptages : deux executions sur les
     memes donnees produisent le meme chiffre, condition necessaire pour qu'une
     decision de tarification soit rejouable en controle.
 
-    La perte attendue est exprimee en euros par lead expose, directement
+    La perte attendue est exprimee en euros par kilo presente, directement
     comparable a la tolerance de perte fixee dans le plan.
     """
     import random

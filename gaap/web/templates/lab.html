@@ -12,7 +12,7 @@
     <div class="card">
       <header>
         <h2>Hypotheses de simulation</h2>
-        <span class="hint">Modele generateur : demande a elasticite constante q(p) = q<sub>ref</sub> × (p / p<sub>ref</sub>)<sup>e</sup>.</span>
+        <span class="hint">Modele generateur : demande a elasticite constante s(p) = s<sub>ref</sub> × (p / p<sub>ref</sub>)<sup>e</sup>.</span>
       </header>
       <form method="post" action="{{ url_for('web.lab', key=experiment.key if experiment else None) }}">
         <div class="grid k4">
@@ -27,15 +27,15 @@
           </div>
           <div class="field">
             <label for="elasticity">Elasticite supposee</label>
-            <input class="n" id="elasticity" name="elasticity" value="{{ params.true_elasticity if params else '-3,5' }}">
+            <input class="n" id="elasticity" name="elasticity" value="{{ params.true_elasticity if params else '-1,2' }}">
             <span class="help">Valeur negative. Issue d'un test anterieur ou de la litterature.</span>
           </div>
           <div class="field">
-            <label for="baseline">Take-up de reference (%)</label>
-            <input class="n" id="baseline" name="baseline" value="{{ (params.baseline_take_up * 100) | dec if params else '6,00' }}">
+            <label for="baseline">Ecoulement de reference (%)</label>
+            <input class="n" id="baseline" name="baseline" value="{{ (params.baseline_sell_through * 100) | dec(1) if params else '82,0' }}">
           </div>
           <div class="field">
-            <label for="volume">Volume total (leads)</label>
+            <label for="volume">Volume total (kilos)</label>
             <input class="n" id="volume" name="volume" value="{{ params.total_volume if params else 40000 }}">
           </div>
         </div>
@@ -70,8 +70,12 @@
         </div>
         <div class="kpi">
           <div class="label">Cout d'apprentissage</div>
-          <div class="value">{{ result.learning_cost_mean | eur }}</div>
-          <div class="note">P5 {{ result.learning_cost_p05 | eur }} · P95 {{ result.learning_cost_p95 | eur }}</div>
+          <div class="value">{{ result.learning_cost_mean | eur(2) }}</div>
+          <div class="note">
+            {%- if result.learning_cost_mean < 0 %}negatif : le test rapporte pendant qu'il tourne ·
+            {% endif -%}
+            P5 {{ result.learning_cost_p05 | eur(2) }} · P95 {{ result.learning_cost_p95 | eur(2) }}
+          </div>
         </div>
       </div>
 
@@ -79,7 +83,7 @@
         <div>
           <h3>Distribution des verdicts</h3>
           <div class="table-wrap">
-            <table class="data">
+            <table class="data verdicts">
               <thead><tr><th>Verdict</th><th class="n">Replications</th><th class="n">Part</th></tr></thead>
               <tbody>
                 {% for verdict, count in result.verdict_counts.items() | sort(attribute='1', reverse=true) %}
@@ -116,16 +120,16 @@
     </div>
 
     <div class="card">
-      <header><h2>Take-up attendu par cellule sous l'hypothese</h2></header>
+      <header><h2>Ecoulement attendu par cellule sous l'hypothese</h2></header>
       <div class="table-wrap">
         <table class="data">
-          <thead><tr><th>Cellule</th><th class="n">Prix</th><th class="n">Take-up simule</th></tr></thead>
+          <thead><tr><th>Cellule</th><th class="n">Prix</th><th class="n">Ecoulement simule</th></tr></thead>
           <tbody>
             {% for cell in experiment.cells %}
               <tr class="{{ 'is-control' if cell.is_control }}">
                 <td>{{ cell.label }}</td>
-                <td class="n">{{ cell.rate | pct }}{% if cell.fee %} + {{ cell.fee | eur }}{% endif %}</td>
-                <td class="n strong">{{ result.per_cell_true_take_up[cell.key] | pct }}</td>
+                <td class="n">{{ cell.price | kg }}{% if cell.pack_discount %} moins {{ cell.pack_discount | eur(2) }}{% endif %}</td>
+                <td class="n strong">{{ result.per_cell_true_sell_through[cell.key] | pct(1) }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -156,9 +160,9 @@
           <span class="name">Elasticite constante</span>
           <span class="detail">Ni courbure, ni seuil psychologique, ni palier concurrentiel.</span></span></li>
         <li class="ko-warning"><span class="mark" aria-hidden="true">&#9888;</span><span class="body">
-          <span class="name">Pas d'anti-selection</span>
-          <span class="detail">La PD est simulee sans derive : le laboratoire dimensionne la detection
-            d'un effet de prix, pas celle d'une degradation du melange de risque.</span></span></li>
+          <span class="name">Pas de selection par la qualite</span>
+          <span class="detail">La fraîcheur est simulee sans derive : le laboratoire dimensionne la
+            detection d'un effet de prix, pas celle d'une degradation du stock residuel.</span></span></li>
         <li class="ko-warning"><span class="mark" aria-hidden="true">&#9888;</span><span class="body">
           <span class="name">Population stationnaire</span>
           <span class="detail">Aucune saisonnalite, aucune reaction de la concurrence.</span></span></li>

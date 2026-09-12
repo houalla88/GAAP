@@ -10,10 +10,50 @@
 <div class="card">
 <div class="prose">
 
-<h2>1. Affectation</h2>
+<h2>1. Pourquoi randomiser</h2>
+<p>
+  Le moteur repose sur une affectation aleatoire. Ce choix demande a etre justifie, parce que
+  l'alternative, estimer l'elasticite sur l'historique, coute moins cher et est souvent deja
+  disponible.
+</p>
+<p>
+  <strong>Le probleme d'identification.</strong> Dans un historique de rayon, le prix n'est pas
+  exogene : il a ete fixe en reponse au cours du cadran, a la concurrence, au calendrier
+  promotionnel et a l'etat du stock, soit aux memes facteurs qui determinent la demande. Une
+  regression de l'ecoulement sur les prix observes estime donc un melange de l'effet causal du prix
+  et de l'effet des variables qui ont fait varier le prix. Le biais de simultaneite qui en resulte
+  n'a pas de signe connu a priori, et aucune statistique d'ajustement ne le revele : un R2 eleve est
+  compatible avec une elasticite fausse d'un facteur deux. Working (1927) l'a etabli il y a un
+  siecle, et rien ne l'a infirme depuis.
+</p>
+<p>
+  <strong>Ce que l'observationnel permet malgre tout.</strong> L'identification causale sur donnees
+  observationnelles reste possible et doit etre tentee quand les conditions sont reunies : variables
+  instrumentales adossees a un choc de cours amont, regression sur discontinuite a un seuil de
+  grille, difference de differences autour d'un deploiement echelonne par magasin, ou experience
+  naturelle. Chacune repose sur une hypothese que les
+  donnees ne permettent pas de tester. Une restriction d'exclusion ne se verifie pas ; un instrument
+  faible ramene l'estimation vers les moindres carres qu'il devait corriger ; une discontinuite
+  n'identifie l'effet qu'au voisinage du seuil. Et tous ces plans estiment l'elasticite d'un
+  portefeuille passe dans des conditions passees.
+</p>
+<p>
+  <strong>Ce que la randomisation apporte.</strong> Elle fabrique la variation exogene au lieu
+  d'esperer la rencontrer : validite interne garantie par le plan et non supposee, mesure prise aux
+  paliers de prix ou la decision se pose, et separation de l'effet du prix et de la selection qu'il
+  induit, puisque la qualite du stock residuel depend du prix affiche.
+</p>
+<p>
+  <strong>Ce qu'elle n'apporte pas.</strong> La validite externe n'est pas garantie. L'effet mesure
+  vaut pour la population exposee, la fenetre du test et la plage de prix testee. C'est la raison
+  pour laquelle le prix optimal derive de la regle de Lerner est borne a l'enveloppe des prix
+  effectivement servis (section 6).
+</p>
+
+<h2>2. Affectation</h2>
 <p>
   L'affectation est une <strong>fonction pure</strong> du sel de l'experience et de l'identifiant
-  du sujet. Elle n'est pas stockee.
+  de l'unite mise en rayon. Elle n'est pas stockee.
 </p>
 <div class="formula">u = uint64( SHA-256( sel ‖ espace ‖ identifiant )[0:8] ) / 2^64</div>
 <p>
@@ -21,61 +61,85 @@
   preserve, l'autre de la cellule. Les melanger correlerait le temoin au prix, un biais qui
   ne se voit dans aucun total.
 </p>
-<p>Trois consequences : l'offre est stable pour un meme client, toute affectation passee est
-  rejouable a partir du sel, et un sujet est re-randomise d'une experience a l'autre.</p>
+<p>Trois consequences : un meme lot releve toujours de la meme cellule, toute affectation passee
+  est rejouable a partir du sel, et une unite est re-randomisee d'une experience a l'autre.</p>
 
-<h2>2. Plancher de rentabilite</h2>
-<div class="formula">r<sub>plancher</sub> = f + o + PD × LGD + k × (h − f),  avec k = RW × ratio CET1</div>
+<h2>3. Plancher de rentabilite</h2>
+<div class="formula">p<sub>plancher</sub> = a / s − v × (1 − s) / s + c</div>
 <p>
-  f est le taux de cession interne, o les couts operationnels annualises rapportes a l'encours
-  moyen, PD × LGD la perte attendue au sens Bale / IFRS 9, k l'intensite capitalistique et h le
-  cout des fonds propres. Le capital immobilise ne rapporte pas f mais doit rapporter h : son
-  cout marginal est l'ecart entre les deux.
-</p>
-<p><strong>Simplifications assumees.</strong> Pas d'effet fiscal, pas de valorisation de l'option
-  de remboursement anticipe, hasard de defaut constant sur la duree, revenus accessoires
-  (assurance, frais annexes) exclus. Les trois premieres abaissent le plancher reel, la derniere
-  le releve : la valeur retenue est donc une approximation, et elle est conservative sur le poste
-  qui compte le plus, le risque.</p>
-
-<h2>3. Metrique de decision</h2>
-<div class="formula">RAC = take-up × (r<sub>effectif</sub> − r<sub>plancher</sub>) × K × D</div>
-<p>
-  Contribution ajustee du risque par lead expose. K est le capital moyen, D le facteur de duree
-  (encours moyen rapporte au capital, multiplie par la maturite). Les frais de dossier sont
-  convertis en equivalent-taux par <code>frais / (K × D)</code> afin que les deux leviers de prix
-  soient comparables sur une meme echelle.
+  <em>a</em> est le cout d'acquisition par kilo vendable, achat, logistique et manutention divises
+  par (1 − freinte connue) ; <em>s</em> le taux d'ecoulement ; <em>v</em> la valeur de sauvetage
+  d'un invendu ; <em>c</em> le cout d'immobilisation du stock. La forme additive affichee dans
+  l'interface separe les trois postes d'acquisition, la perte attendue sur invendus et le capital.
 </p>
 <p>
-  GAAP ne tranche jamais sur le taux de conversion. Le prix qui convertit le mieux est par
-  construction le plus bas admissible ; il ne maximise la valeur que si la demande est
-  suffisamment elastique, ce qui est une question empirique et non un postulat.
+  <strong>La perte attendue sur invendus est l'analogue exact d'une perte de credit</strong> :
+  une probabilite d'echec, ici (1 − s), multipliee par la perte encourue en cas d'echec, ici le
+  cout d'acquisition diminue de la valeur de sauvetage.
+</p>
+<p>
+  <strong>Le plancher depend du prix.</strong> C'est la particularite du perissable et tout
+  l'interet du domaine : baisser le prix accelere la rotation, donc reduit la casse, donc abaisse
+  le cout complet par kilo vendu. Le plancher est donc recalcule au taux d'ecoulement observe de
+  chaque cellule, et non au taux declare dans le plan. Comparer une cellule chere, qui tourne
+  lentement et casse davantage, a un plancher calcule sur la rotation du controle la flatterait
+  mecaniquement.
+</p>
+<p><strong>Simplifications assumees.</strong> Pas d'effet de gamme, la baisse de prix d'un produit
+  deplacant la demande des produits voisins ; pas de valorisation de la fidelisation induite par un
+  prix d'appel ; freinte connue supposee independante du prix. La premiere surestime le gain d'une
+  baisse, les deux suivantes le sous-estiment.</p>
+
+<h2>4. Metrique de decision</h2>
+<div class="formula">C = taux d'ecoulement × (p<sub>effectif</sub> − p<sub>plancher</sub>)</div>
+<p>
+  Contribution en euros par kilo <strong>mis en rayon</strong>, et non par kilo vendu : c'est le
+  kilo presente qui est engage, donc c'est lui qui doit porter le rendement. Les remises sur
+  conditionnement multiple sont deduites du prix affiche, afin que les deux leviers vivent sur la
+  meme echelle : ils touchent la meme poche du client.
+</p>
+<p>
+  Decomposition exacte : un kilo presente rapporte <code>p − v − c</code> s'il se vend et coute
+  <code>a − v</code> s'il casse. La contribution vaut donc <code>s × V + K</code>, et sa variance
+  exactement <code>s (1 − s) V²</code>. Aucune observation unitaire n'a besoin d'etre relue pour
+  obtenir les intervalles.
+</p>
+<p>
+  GAAP ne tranche jamais sur le taux d'ecoulement, ni sur le taux de casse. Le prix qui ecoule le
+  mieux est par construction le plus bas admissible, et il minimise aussi le gaspillage ; il ne
+  maximise la valeur que si la demande est suffisamment elastique, ce qui est une question
+  empirique et non un postulat. <strong>Un objectif de reduction du gaspillage et un objectif de
+  marge peuvent donc designer des prix opposes</strong>, et le jeu de demonstration contient
+  precisement ce cas.
 </p>
 
-<h2>4. Inference</h2>
+<h2>5. Inference</h2>
 <ul>
   <li><strong>Intervalles sur une proportion</strong> : score de Wilson (1927), conserve sa
-    couverture aux faibles taux, le regime usuel d'un take-up de credit.</li>
+    couverture aux taux extremes, le regime usuel d'un ecoulement de produit frais.</li>
   <li><strong>Ecart entre deux proportions</strong> : methode hybride de Newcombe (1998,
     methode 10), construite sur les bornes de Wilson.</li>
   <li><strong>Metrique continue</strong> : test t de Welch. La variance de la contribution depend
     du prix de la cellule, donc l'homoscedasticite est fausse par construction.</li>
+  <li><strong>Effet de grappe</strong> : les kilos d'un meme lot ne sont pas independants. Les
+    intervalles binomiaux sont donc optimistes et appelleraient un correctif. La limite est
+    documentee plutot que tue.</li>
   <li><strong>Comparaisons multiples</strong> : correction de Bonferroni sur le nombre de
     comparaisons au controle.</li>
   <li><strong>Integrite de l'allocation</strong> : test du chi2 d'adequation (SRM), seuil severe
     a p &lt; 0,001. Un echec invalide la lecture, quelle que soit l'apparence des chiffres.</li>
   <li><strong>Arret sequentiel</strong> : frontiere de type O'Brien-Fleming, approximation de
     Lan-DeMets <code>z*(t) = z<sub>α/2</sub> / √t</code>. Conservatrice au debut, elle converge
-    vers le seuil nominal. Elle porte sur la contribution, pas sur la conversion.</li>
+    vers le seuil nominal. Elle porte sur la contribution, pas sur l'ecoulement.</li>
   <li><strong>Lecture bayesienne</strong> : posteriors Beta a prior uniforme, P(variante &gt;
     controle) en forme fermee, perte attendue par Monte-Carlo a graine deterministe.</li>
 </ul>
 
-<h2>5. Elasticite</h2>
-<div class="formula">ln q = a + e × ln p,  poids w<sub>i</sub> = n<sub>i</sub> p<sub>i</sub> / (1 − p<sub>i</sub>)</div>
+<h2>6. Elasticite</h2>
+<div class="formula">ln s = a + e × ln p,  poids w<sub>i</sub> = n<sub>i</sub> s<sub>i</sub> / (1 − s<sub>i</sub>)</div>
 <p>
   Regression log-log ponderee des que trois paliers de prix sont disponibles ; les poids sont
-  l'inverse de la variance de <code>ln p</code> par la methode delta. A deux paliers, seule
+  l'inverse de la variance de <code>ln s</code> par la methode delta. A deux paliers, seule
   l'elasticite d'arc (point milieu) est calculable, sans incertitude estimable.
 </p>
 <p>
@@ -85,30 +149,47 @@
   signale toute extrapolation : sortir de l'enveloppe, c'est remplacer une mesure par une
   hypothese de forme fonctionnelle.
 </p>
-
-<h2>6. Anti-selection</h2>
 <p>
-  A chaque cellule, GAAP compare la PD moyenne des dossiers <em>acceptes</em> a celle du
-  controle (test de Welch). Une hausse significative lorsque le prix monte signale que la marge
-  supplementaire est partiellement compensee par une degradation du melange de risque, et c'est
-  le mecanisme d'anti-selection, invisible d'un test de conversion.
-</p>
-<p>
-  <strong>Limite importante.</strong> La PD utilisee est celle d'octroi, produite par le modele
-  de score. Elle anticipe la perte, elle ne la constate pas. Toute conclusion sur le melange de
-  risque doit etre confirmee sur les cohortes a douze mois avant generalisation.
+  <strong>Precaution supplementaire propre au perissable.</strong> La regle de Lerner traite le
+  cout <code>c</code> comme une constante. Ici il depend du taux d'ecoulement, donc du prix.
+  L'optimum theorique est calcule au plancher du plan, ce qui en fait une indication de direction
+  et non une valeur a appliquer.
 </p>
 
-<h2>7. Ce que GAAP ne mesure pas</h2>
+<h2>7. Selection par la qualite</h2>
+<p>
+  A chaque cellule, GAAP compare l'indice de fraîcheur moyen des kilos <em>vendus</em> a celui du
+  controle (test de Welch). Une hausse significative lorsque le prix monte signale que le client
+  est devenu plus exigeant et prend en priorite les plus beaux articles : le stock residuel se
+  degrade alors plus vite que ne l'explique le seul ralentissement de rotation.
+</p>
+<p>
+  C'est l'analogue exact de l'anti-selection en credit, ou une hausse de taux n'est acceptee que
+  par les demandeurs qui ont le moins d'alternatives. Dans les deux cas, la marge supplementaire
+  est partiellement compensee par une degradation de ce qui reste, et dans les deux cas un test
+  qui ne regarde que le taux de prise ne la voit pas.
+</p>
+<p>
+  <strong>Limite importante.</strong> L'indice de fraîcheur est releve a la mise en rayon. Il
+  anticipe la casse, il ne la constate pas. Toute conclusion sur la degradation du stock residuel
+  doit etre confirmee sur les releves de demarque de fin de periode.
+</p>
+
+<h2>8. Ce que GAAP ne mesure pas</h2>
 <ul>
   <li>La reaction de la concurrence a un changement de prix generalise.</li>
-  <li>L'effet du prix sur la valeur client a long terme (multi-detention, attrition, refinancement).</li>
+  <li><strong>L'effet de gamme</strong> : une baisse sur les tomates grappe deplace une partie de
+    la demande des tomates cerises. Le test mesure un produit, pas un rayon.</li>
+  <li>L'effet du prix sur la frequentation et le panier moyen, au-dela du produit teste.</li>
   <li>La saisonnalite et les effets de nouveaute au-dela de la fenetre du test.</li>
-  <li>Le comportement des clients exclus du test par garde-fou, par construction non observes.</li>
-  <li>La perte reellement constatee : seule la perte attendue au moment de l'octroi entre dans le calcul.</li>
+  <li><strong>Le couplage prix / quantite commandee.</strong> La quantite mise en rayon est traitee
+    comme donnee. L'optimiser conjointement au prix releve du probleme du vendeur de journaux et
+    n'est pas modelise ici.</li>
+  <li>Le comportement des magasins exclus du test par garde-fou, par construction non observes.</li>
+  <li>La demarque reellement constatee : seule la casse attendue entre dans le calcul.</li>
 </ul>
 
-<h2>8. References</h2>
+<h2>9. References</h2>
 <ul>
   <li>Kohavi, Tang &amp; Xu (2020), <em>Trustworthy Online Controlled Experiments</em>, Cambridge
     University Press : SRM, peeking, hierarchie des metriques.</li>
@@ -118,8 +199,15 @@
     <em>Biometrika</em> 70(3) : frontieres d'arret sequentielles.</li>
   <li>Fleiss, Levin &amp; Paik (2003), <em>Statistical Methods for Rates and Proportions</em> : dimensionnement.</li>
   <li>Lerner (1934), <em>Review of Economic Studies</em> 1(3) : indice de pouvoir de marche.</li>
-  <li>Comite de Bale (2017), <em>Bale III : finalisation des reformes</em> : ponderations de risque, exigences de fonds propres.</li>
-  <li>IFRS 9, <em>Instruments financiers</em> : pertes de credit attendues.</li>
+  <li>Arrow, Harris &amp; Marschak (1951), <em>Econometrica</em> 19(3) : gestion optimale des
+    stocks sous demande aleatoire.</li>
+  <li>Petruzzi &amp; Dada (1999), <em>Operations Research</em> 47(2) : tarification et quantite
+    commandee sous demande aleatoire, le probleme du vendeur de journaux a prix endogene.</li>
+  <li>Working (1927), <em>Quarterly Journal of Economics</em> 41(2) : probleme d'identification de la demande.</li>
+  <li>Berry, Levinsohn &amp; Pakes (1995), <em>Econometrica</em> 63(4) : demande a prix endogenes.</li>
+  <li>Bound, Jaeger &amp; Baker (1995), <em>JASA</em> 90(430) : instruments faibles.</li>
+  <li>Karlan &amp; Zinman (2009), <em>Econometrica</em> 77(6) : anti-selection et alea moral en credit
+    a la consommation, par experience randomisee.</li>
 </ul>
 
 <p class="caption">

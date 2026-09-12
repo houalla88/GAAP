@@ -3,7 +3,8 @@
 {% block heading %}Concevoir un plan tarifaire{% endblock %}
 {% block lede %}
   Le plan est enregistre en brouillon. Il devra franchir les garde-fous et la validation d'un
-  second intervenant avant toute mise en production : un test de prix modifie le produit vendu.
+  second intervenant avant toute mise en rayon : un test de prix engage de la marchandise qui ne
+  se rattrape pas.
 {% endblock %}
 
 {% block content %}
@@ -15,20 +16,20 @@
         <div class="grid k2">
           <div class="field">
             <label for="key">Cle technique</label>
-            <input id="key" name="key" required placeholder="pp-taeg-2026q4" pattern="[a-z0-9\-]{3,48}">
+            <input id="key" name="key" required placeholder="tomate-grappe-2026s40" pattern="[a-z0-9\-]{3,48}">
             <span class="help">Minuscules, chiffres et tirets. Sert de reference dans la piste d'audit.</span>
           </div>
           <div class="field">
             <label for="name">Intitule</label>
-            <input id="name" name="name" required placeholder="Pret personnel, echelle de TAEG">
+            <input id="name" name="name" required placeholder="Tomates grappe - echelle de prix">
           </div>
           <div class="field">
             <label for="product">Produit</label>
-            <input id="product" name="product" placeholder="Pret personnel">
+            <input id="product" name="product" placeholder="Tomates grappe">
           </div>
           <div class="field">
             <label for="owner">Equipe responsable</label>
-            <input id="owner" name="owner" placeholder="Pricing &amp; Analytics">
+            <input id="owner" name="owner" placeholder="Categorie fruits et legumes">
           </div>
         </div>
         <div class="field">
@@ -48,41 +49,47 @@
         </header>
         <div class="cells-grid">
           <div class="field"><label>Role</label><input value="Controle" readonly></div>
-          <div class="field"><label for="r0">TAEG (%)</label><input class="n" id="r0" name="cell_rate" required value="6,90"></div>
-          <div class="field"><label for="f0">Frais (EUR)</label><input class="n" id="f0" name="cell_fee" value="0"></div>
+          <div class="field"><label for="r0">Prix (EUR/kg)</label><input class="n" id="r0" name="cell_price" required value="2,95"></div>
+          <div class="field"><label for="f0">Remise lot (EUR/kg)</label><input class="n" id="f0" name="cell_discount" value="0"></div>
           <div class="field"><label for="w0">Poids</label><input class="n" id="w0" name="cell_weight" required value="0,40"></div>
 
           <div class="field"><label>Variante 1</label><input value="Cellule de test" readonly></div>
-          <div class="field"><label for="r1">TAEG (%)</label><input class="n" id="r1" name="cell_rate" value="7,35"></div>
-          <div class="field"><label for="f1">Frais (EUR)</label><input class="n" id="f1" name="cell_fee" value="0"></div>
+          <div class="field"><label for="r1">Prix (EUR/kg)</label><input class="n" id="r1" name="cell_price" value="3,15"></div>
+          <div class="field"><label for="f1">Remise lot (EUR/kg)</label><input class="n" id="f1" name="cell_discount" value="0"></div>
           <div class="field"><label for="w1">Poids</label><input class="n" id="w1" name="cell_weight" value="0,30"></div>
 
           <div class="field"><label>Variante 2</label><input value="Cellule de test" readonly></div>
-          <div class="field"><label for="r2">TAEG (%)</label><input class="n" id="r2" name="cell_rate" value="7,80"></div>
-          <div class="field"><label for="f2">Frais (EUR)</label><input class="n" id="f2" name="cell_fee" value="0"></div>
+          <div class="field"><label for="r2">Prix (EUR/kg)</label><input class="n" id="r2" name="cell_price" value="3,35"></div>
+          <div class="field"><label for="f2">Remise lot (EUR/kg)</label><input class="n" id="f2" name="cell_discount" value="0"></div>
           <div class="field"><label for="w2">Poids</label><input class="n" id="w2" name="cell_weight" value="0,30"></div>
         </div>
       </div>
 
       <div class="card">
         <header>
-          <h2>Cout du risque</h2>
-          <span class="hint">Alimente le plancher de rentabilite. Valeurs issues de l'ALM et du modele de score.</span>
+          <h2>Structure de cout</h2>
+          <span class="hint">Alimente le plancher de rentabilite. Valeurs issues des achats et du controle de gestion.</span>
         </header>
         <div class="grid k4">
-          <div class="field"><label for="funding_rate">Refinancement (%)</label><input class="n" id="funding_rate" name="funding_rate" value="2,85"></div>
-          <div class="field"><label for="operating_cost_rate">Couts operationnels (%)</label><input class="n" id="operating_cost_rate" name="operating_cost_rate" value="1,10"></div>
-          <div class="field"><label for="pd">PD 12 mois (%)</label><input class="n" id="pd" name="pd" value="2,10"></div>
-          <div class="field"><label for="lgd">LGD (%)</label><input class="n" id="lgd" name="lgd" value="62,0"></div>
-          <div class="field"><label for="risk_weight">Ponderation RWA (%)</label><input class="n" id="risk_weight" name="risk_weight" value="75,0"></div>
-          <div class="field"><label for="capital_ratio">Ratio de fonds propres (%)</label><input class="n" id="capital_ratio" name="capital_ratio" value="12,5"></div>
-          <div class="field"><label for="hurdle_rate">Cout des fonds propres (%)</label><input class="n" id="hurdle_rate" name="hurdle_rate" value="11,0"></div>
-          <div class="field"><label for="principal">Capital moyen (EUR)</label><input class="n" id="principal" name="principal" value="12500"></div>
+          <div class="field"><label for="purchase_cost">Achat (EUR/kg)</label><input class="n" id="purchase_cost" name="purchase_cost" value="1,45"></div>
+          <div class="field"><label for="logistics_cost">Logistique et froid (EUR/kg)</label><input class="n" id="logistics_cost" name="logistics_cost" value="0,18"></div>
+          <div class="field"><label for="handling_cost">Manutention (EUR/kg)</label><input class="n" id="handling_cost" name="handling_cost" value="0,22"></div>
           <div class="field">
-            <label for="duration_factor">Facteur de duree</label>
-            <input class="n" id="duration_factor" name="duration_factor" value="2,4">
-            <span class="help">Encours moyen rapporte au capital, multiplie par la maturite en annees.</span>
+            <label for="known_shrink">Freinte connue (%)</label>
+            <input class="n" id="known_shrink" name="known_shrink" value="6,0">
+            <span class="help">Part du poids livre perdue au parage et a la deshydratation.</span>
           </div>
+          <div class="field">
+            <label for="salvage_value">Valeur de sauvetage (EUR/kg)</label>
+            <input class="n" id="salvage_value" name="salvage_value" value="0,10">
+            <span class="help">Don defiscalise, transformation. Zero si destruction.</span>
+          </div>
+          <div class="field">
+            <label for="expected_sell_through">Ecoulement suppose (%)</label>
+            <input class="n" id="expected_sell_through" name="expected_sell_through" value="82,0">
+            <span class="help">Equivalent fonctionnel d'une probabilite de defaut : une hypothese que le test viendra confirmer.</span>
+          </div>
+          <div class="field"><label for="capital_cost">Immobilisation (EUR/kg)</label><input class="n" id="capital_cost" name="capital_cost" value="0,012"></div>
         </div>
       </div>
 
@@ -91,19 +98,19 @@
         <div class="grid k4">
           <div class="field"><label for="holdout_share">Temoin preserve (%)</label><input class="n" id="holdout_share" name="holdout_share" value="5,0"></div>
           <div class="field"><label for="max_exposure">Exposition maximale (%)</label><input class="n" id="max_exposure" name="max_exposure" value="50,0"></div>
-          <div class="field"><label for="max_delta_bp">Amplitude maximale (bps)</label><input class="n" id="max_delta_bp" name="max_delta_bp" value="120"></div>
-          <div class="field"><label for="max_duration_days">Duree maximale (jours)</label><input class="n" id="max_duration_days" name="max_duration_days" value="45"></div>
-          <div class="field"><label for="min_sample_per_cell">Volume minimal / cellule</label><input class="n" id="min_sample_per_cell" name="min_sample_per_cell" value="7000"></div>
+          <div class="field"><label for="max_delta_cents">Amplitude maximale (centimes)</label><input class="n" id="max_delta_cents" name="max_delta_cents" value="50"></div>
+          <div class="field"><label for="max_duration_days">Duree maximale (jours)</label><input class="n" id="max_duration_days" name="max_duration_days" value="28"></div>
+          <div class="field"><label for="min_sample_per_cell">Kilos minimum / cellule</label><input class="n" id="min_sample_per_cell" name="min_sample_per_cell" value="11000"></div>
           <div class="field">
-            <label for="loss_tolerance_per_lead">Tolerance de perte (EUR / lead)</label>
-            <input class="n" id="loss_tolerance_per_lead" name="loss_tolerance_per_lead" value="5,00">
+            <label for="loss_tolerance_per_unit">Tolerance de perte (EUR / kg)</label>
+            <input class="n" id="loss_tolerance_per_unit" name="loss_tolerance_per_unit" value="0,12">
             <span class="help">Seuil d'arret de protection, fixe avant de voir les resultats.</span>
           </div>
           <div class="field"><label for="alpha">Risque alpha (%)</label><input class="n" id="alpha" name="alpha" value="5,0"></div>
           <div class="field"><label for="power">Puissance cible (%)</label><input class="n" id="power" name="power" value="80,0"></div>
-          <div class="field"><label for="baseline_rate">Take-up de reference (%)</label><input class="n" id="baseline_rate" name="baseline_rate" value="6,0"></div>
-          <div class="field"><label for="target_mde">Effet minimal a detecter (%)</label><input class="n" id="target_mde" name="target_mde" value="15,0"></div>
-          <div class="field"><label for="planned_volume">Volume prevu (leads)</label><input class="n" id="planned_volume" name="planned_volume" value="46000"></div>
+          <div class="field"><label for="baseline_sell_through">Ecoulement de reference (%)</label><input class="n" id="baseline_sell_through" name="baseline_sell_through" value="82,0"></div>
+          <div class="field"><label for="target_mde">Effet minimal a detecter (%)</label><input class="n" id="target_mde" name="target_mde" value="5,0"></div>
+          <div class="field"><label for="planned_volume">Volume prevu (kilos)</label><input class="n" id="planned_volume" name="planned_volume" value="72000"></div>
         </div>
       </div>
 
@@ -140,10 +147,10 @@
         <ul class="checklist">
           <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
             <span class="name">Plancher de rentabilite</span>
-            <span class="detail">Aucune cellule sous f + o + PD×LGD + k×(h − f).</span></span></li>
+            <span class="detail">Aucune cellule sous achat, logistique, manutention, casse attendue et immobilisation.</span></span></li>
           <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
             <span class="name">Amplitude et exposition</span>
-            <span class="detail">Ecart de prix borne, part du trafic exposee plafonnee.</span></span></li>
+            <span class="detail">Ecart de prix borne, part du volume exposee plafonnee.</span></span></li>
           <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
             <span class="name">Criteres proteges</span>
             <span class="detail">Aucun ciblage adosse a un critere de discrimination prohibe.</span></span></li>

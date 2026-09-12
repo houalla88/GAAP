@@ -285,6 +285,10 @@ table.data .n {
   white-space: nowrap;
 }
 table.data .strong { font-weight: 650; }
+/* Colonne etroite : les libelles de verdict sont longs et le `nowrap` des
+   etiquettes imposerait au tableau une largeur minimale qui deborde. */
+table.data.verdicts th, table.data.verdicts td { padding-left: 6px; padding-right: 6px; }
+table.data.verdicts .chip { white-space: normal; text-align: left; }
 table.data caption {
   caption-side: bottom; text-align: left; padding-top: 10px;
   font-size: 0.78rem; color: var(--n600);
@@ -419,8 +423,9 @@ fieldset > legend {
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.76rem; color: var(--n600); margin-top: 10px; }
 .legend .item { display: inline-flex; align-items: center; gap: 6px; }
 .legend .swatch { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 11px; }
-.sw-1 { background: #5fc9b2; } .sw-2 { background: #22a68c; }
-.sw-3 { background: #09806c; } .sw-4 { background: #065445; }
+.sw-1 { background: #a8e5d6; } .sw-2 { background: #5fc9b2; }
+.sw-3 { background: #22a68c; } .sw-4 { background: #09806c; }
+.sw-5 { background: #065445; }
 .sw-margin { background: var(--accent-deep); }
 
 /* ------------------------------------------------------------------- audit */
