@@ -143,3 +143,10 @@ dmypy.json
 
 # macOS
 .DS_Store
+
+# GAAP
+instance/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+docs/assets/.tmp/

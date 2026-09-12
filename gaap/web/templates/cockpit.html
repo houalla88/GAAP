@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Cockpit{% endblock %}
+{% block heading %}Cockpit tarifaire{% endblock %}
+{% block lede %}
+  Etat du portefeuille d'experiences de prix. Les experiences qui appellent une decision
+  remontent en tete ; celles qui tournent normalement restent lisibles et silencieuses.
+{% endblock %}
+{% block actions %}
+  <a class="btn primary" href="{{ url_for('web.experiment_new') }}">Nouveau plan</a>
+  <a class="btn" href="{{ url_for('web.lab') }}">Laboratoire</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid k4">
+  <div class="kpi accent">
+    <div class="label">Tests en production</div>
+    <div class="value">{{ live_count }}</div>
+    <div class="note">{{ blocked_count }} plan(s) bloque(s) par les garde-fous</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Leads exposes</div>
+    <div class="value">{{ total_exposed | num }}</div>
+    <div class="note">cumul toutes experiences</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Decisions en attente</div>
+    <div class="value">{{ actionable | length }}</div>
+    <div class="note">bascule, arret de protection ou invalidation</div>
+  </div>
+  <div class="kpi">
+    <div class="label">{{ "Cout d'apprentissage" if learning_cost > 0 else "Gain net des tests" }}</div>
+    <div class="value">{{ (learning_cost if learning_cost > 0 else -learning_cost) | eur }}</div>
+    <div class="note">
+      {% if learning_cost > 0 %}marge sacrifiee pour acquerir l'information
+      {% else %}les tests se sont autofinances sur la periode{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if at_risk %}
+  <div class="banner danger" role="alert">
+    <span class="sigil" aria-hidden="true">!</span>
+    <span>
+      <strong>{{ at_risk | length }} experience(s) en anomalie.</strong>
+      Un garde-fou bloquant est en echec : rupture d'allocation, depassement de la tolerance
+      de perte ou franchissement du plancher de rentabilite. Detail sur la fiche concernee.
+    </span>
+  </div>
+{% endif %}
+
+<div class="card">
+  <header>
+    <h2>Portefeuille d'experiences</h2>
+    <span class="hint">Verdict calcule a la volee sur les donnees disponibles — aucune valeur figee en base.</span>
+  </header>
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Experience</th>
+          <th>Etat</th>
+          <th class="n">Exposes</th>
+          <th class="n">Information</th>
+          <th class="n">Take-up</th>
+          <th class="n">Meilleure contribution</th>
+          <th>Tendance</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          {% set report = row.report %}
+          {% set analysis = report.analysis %}
+          {% set best = analysis.best_by_rac %}
+          <tr>
+            <td>
+              <span class="cell-name">
+                <a href="{{ url_for('web.experiment_detail', key=report.experiment.key) }}"><strong>{{ report.experiment.name }}</strong></a>
+                <span class="sub">{{ report.experiment.product }} · plancher {{ analysis.floor_rate | pct }}</span>
+              </span>
+            </td>
+            <td><span class="chip {{ report.experiment.status.value }}">{{ report.experiment.status.label }}</span></td>
+            <td class="n">{{ analysis.total_exposed | num }}</td>
+            <td class="n">
+              {{ progress_bar(analysis.information_fraction, 'information accumulee') }}
+              <span class="caption">{{ (analysis.information_fraction * 100) | round(0) | int }} %</span>
+            </td>
+            <td class="n">{{ analysis.control_result.take_up | pct }}</td>
+            <td class="n">
+              <span class="strong">{{ best.rac_per_lead | dec }} EUR</span><br>
+              <span class="caption">{{ best.cell.label }}</span>
+            </td>
+            <td>{% if row.spark %}{{ row.spark }}{% else %}<span class="caption">—</span>{% endif %}</td>
+            <td>
+              {% if not report.pre_launch.cleared and report.experiment.status.value in ('draft', 'review') %}
+                <span class="chip danger">Plan refuse</span>
+                <span class="caption">{{ report.pre_launch.blocking | length }} garde-fou(s) bloquant(s)</span>
+              {% else %}
+                <span class="chip {{ report.recommendation.verdict.tone }}">{{ report.recommendation.verdict.label }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <caption>
+        Le verdict porte sur la contribution ajustee du risque, jamais sur le seul taux de conversion.
+        Un test invalide (rupture d'allocation) n'est pas lu, quelle que soit l'apparence de ses chiffres.
+      </caption>
+    </table>
+  </div>
+</div>
+
+{% if actionable %}
+<div class="card">
+  <header><h2>A traiter en priorite</h2></header>
+  <div class="stack">
+    {% for report in actionable %}
+      <div class="verdict {{ report.recommendation.verdict.tone }}">
+        <div class="kicker">{{ report.experiment.name }} — {{ report.recommendation.verdict.label }}</div>
+        <h2>{{ report.recommendation.headline }}</h2>
+        <ul>
+          {% for line in report.recommendation.rationale[:2] %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+        <div class="row">
+          <a class="btn" href="{{ url_for('web.experiment_detail', key=report.experiment.key) }}">Ouvrir la fiche</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

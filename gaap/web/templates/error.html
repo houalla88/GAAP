@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Erreur {{ code }}{% endblock %}
+{% block heading %}Erreur {{ code }}{% endblock %}
+{% block lede %}{{ message }}{% endblock %}
+{% block content %}
+<div class="card">
+  <p><a class="btn" href="{{ url_for('web.cockpit') }}">Retour au cockpit</a></p>
+</div>
+{% endblock %}

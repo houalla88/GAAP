@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Piste d'audit{% endblock %}
+{% block heading %}Piste d'audit{% endblock %}
+{% block lede %}
+  Journal en ajout seul, scelle par chaînage d'empreintes SHA-256. Modifier ou supprimer une
+  entree ancienne invalide toutes les suivantes — et la verification le dit.
+{% endblock %}
+{% block actions %}
+  <span class="chip {{ 'success' if verification.intact else 'danger' }}">
+    {{ 'Chaîne intacte' if verification.intact else 'Rupture detectee' }}
+  </span>
+{% endblock %}
+
+{% block content %}
+<div class="grid k4">
+  <div class="kpi accent">
+    <div class="label">Entrees scellees</div>
+    <div class="value">{{ total | num }}</div>
+    <div class="note">depuis l'ancrage de la chaîne</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Verification</div>
+    <div class="value">{{ 'OK' if verification.intact else 'KO' }}</div>
+    <div class="note">{{ verification.summary }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Algorithme</div>
+    <div class="value">SHA-256</div>
+    <div class="note">h<sub>n</sub> = H(h<sub>n−1</sub> ‖ contenu canonique)</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Affectations</div>
+    <div class="value">rejouables</div>
+    <div class="note">fonction pure du sel — non journalisees, donc non divergentes</div>
+  </div>
+</div>
+
+<div class="card">
+  <header>
+    <h2>Journal</h2>
+    <span class="hint">
+      Ce qui est journalise : conception, modification, validation, activation, refus par
+      garde-fou, suspension, decision rendue, conclusion.
+    </span>
+  </header>
+  <ul class="ledger">
+    {% for entry in entries %}
+      <li>
+        <span class="seq">#{{ entry.seq }}</span>
+        <span>
+          <span class="event">
+            {{ entry.event }}
+            {% if entry.event == 'guardrail.blocked' %}<span class="chip danger">refus</span>{% endif %}
+            {% if entry.event == 'experiment.activated' %}<span class="chip success">production</span>{% endif %}
+            {% if entry.event == 'decision.rendered' %}<span class="chip info">decision</span>{% endif %}
+          </span>
+          <span class="meta">
+            {{ entry.recorded_at | when }} · <strong>{{ entry.actor }}</strong> ·
+            <a href="{{ url_for('web.experiment_detail', key=entry.subject) }}">{{ entry.subject }}</a>
+          </span>
+          <span class="chain">{{ entry.short_prev }} → <span class="link">{{ entry.short_hash }}</span></span>
+          {% if entry.payload %}
+            <details class="payload">
+              <summary>Contenu scelle</summary>
+              <pre>{{ entry.payload | tojson(indent=2) }}</pre>
+            </details>
+          {% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

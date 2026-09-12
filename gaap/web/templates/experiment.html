@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% set experiment = report.experiment %}
+{% set recommendation = report.recommendation %}
+{% block title %}{{ experiment.name }}{% endblock %}
+{% block heading %}{{ experiment.name }}{% endblock %}
+{% block lede %}{{ experiment.hypothesis }}{% endblock %}
+{% block actions %}
+  <span class="chip {{ experiment.status.value }}">{{ experiment.status.label }}</span>
+  <form method="post" action="{{ url_for('web.experiment_transition', key=experiment.key) }}" class="row">
+    {% if experiment.status.value == 'draft' %}
+      <button class="btn" name="action" value="submit">Soumettre a validation</button>
+    {% elif experiment.status.value == 'review' %}
+      <input type="hidden" name="actor" value="direction.risques">
+      <button class="btn" name="action" value="approve">Valider (second intervenant)</button>
+      <button class="btn {{ '' if report.pre_launch.cleared else 'danger' }}"
+              name="action" value="activate">Mettre en production</button>
+    {% elif experiment.status.value == 'live' %}
+      <button class="btn" name="action" value="pause">Suspendre</button>
+      <button class="btn" name="action" value="conclude">Conclure</button>
+    {% elif experiment.status.value == 'paused' %}
+      <button class="btn" name="action" value="resume">Reprendre</button>
+      <button class="btn" name="action" value="conclude">Conclure</button>
+    {% endif %}
+  </form>
+{% endblock %}
+
+{% block content %}
+
+{% for warning in analysis.warnings %}
+  <div class="banner {{ 'danger' if loop.first and not analysis.srm.passed else 'warning' }}" role="alert">
+    <span class="sigil" aria-hidden="true">{{ '!' if loop.first and not analysis.srm.passed else '&#9888;' | safe }}</span>
+    <span>{{ warning }}</span>
+  </div>
+{% endfor %}
+
+{% set en_conception = experiment.status.value in ('draft', 'review') %}
+{% set refuse = en_conception and not report.pre_launch.cleared %}
+
+<div class="grid main-side">
+  <div class="stack">
+
+    {% if refuse %}
+    <div class="verdict danger">
+      <div class="kicker">Plan refuse — {{ report.pre_launch.blocking | length }} garde-fou(s) bloquant(s)</div>
+      <h2>Ce plan ne peut pas etre mis en production</h2>
+      <ul>
+        {% for check in report.pre_launch.blocking %}
+          <li><strong>{{ check.label }}.</strong> {{ check.detail }}</li>
+        {% endfor %}
+      </ul>
+      <div class="caveats">
+        <div class="caption"><strong>Suite a donner</strong></div>
+        <ul>
+          <li>Corriger le plan tant qu'il est en brouillon : un plan active ne peut plus etre modifie.</li>
+          <li>Le refus est deja scelle dans la piste d'audit. Un test bloque fait partie de
+            l'historique de decision au meme titre qu'un test accepte.</li>
+        </ul>
+      </div>
+    </div>
+    {% else %}
+    <div class="verdict {{ recommendation.verdict.tone }}">
+      <div class="kicker">Recommandation — {{ recommendation.verdict.label }}</div>
+      <h2>{{ recommendation.headline }}</h2>
+      <ul>
+        {% for line in recommendation.rationale %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+      <div class="caveats">
+        <div class="caption"><strong>Reserves attachees a cette recommandation</strong></div>
+        <ul>
+          {% for note in recommendation.caveats %}<li>{{ note }}</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="row">
+        <form method="post" action="{{ url_for('web.record_decision', key=experiment.key) }}">
+          <button class="btn primary" type="submit">Ancrer cette decision dans la piste d'audit</button>
+        </form>
+        <span class="caption">
+          Probabilite que la cellule retenue rapporte davantage :
+          {{ (recommendation.confidence * 100) | round(1) }} % ·
+          impact {{ recommendation.impact_per_basis | eur_signed(0) }} pour
+          {{ recommendation.impact_basis | num }} leads exposes
+        </span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <header>
+        <h2>Ou passe le prix</h2>
+        <span class="hint">
+          Le plancher se decompose en quatre postes ; seule la fraction violette au-dessus
+          est disponible pour remunerer le risque pris par l'actionnaire.
+        </span>
+      </header>
+      {{ ladder }}
+      <div class="legend">
+        <span class="item"><span class="swatch sw-1"></span>Refinancement</span>
+        <span class="item"><span class="swatch sw-2"></span>Couts operationnels</span>
+        <span class="item"><span class="swatch sw-3"></span>Perte attendue (PD x LGD)</span>
+        <span class="item"><span class="swatch sw-4"></span>Charge en capital</span>
+        <span class="item"><span class="swatch sw-margin"></span>Marge disponible</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <header>
+        <h2>Resultats par cellule</h2>
+        <span class="hint">alpha corrige de Bonferroni : {{ analysis.alpha_adjusted | round(5) }}
+          pour {{ experiment.comparisons }} comparaison(s)</span>
+      </header>
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Cellule</th>
+              <th class="n">Exposes</th>
+              <th class="n">Take-up</th>
+              <th class="n">IC take-up</th>
+              <th class="n">Marge</th>
+              <th class="n">RAROC</th>
+              <th class="n">EUR / lead</th>
+              <th class="n">Ecart</th>
+              <th class="n">t</th>
+              <th class="n">P(rapporte +)</th>
+              <th class="n">PD acceptes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for result in analysis.results %}
+              <tr class="{% if result.is_control %}is-control{% elif recommendation.target_cell_key == result.cell.key and recommendation.verdict.value == 'switch' %}is-winner{% endif %}">
+                <td>
+                  <span class="cell-name">
+                    <strong>{{ result.cell.label }}</strong>
+                    <span class="sub">
+                      {% if result.is_control %}reference{% else %}{{ result.delta_bp | bp }}{% endif %}
+                      {% if result.cell.fee %} · frais {{ result.cell.fee | eur }}{% endif %}
+                      · effectif {{ result.effective_rate | pct }}
+                    </span>
+                  </span>
+                </td>
+                <td class="n">{{ result.exposed | num }}</td>
+                <td class="n strong">{{ result.take_up | pct }}</td>
+                <td class="n">{{ result.take_up_ci[0] | pct(2) }} – {{ result.take_up_ci[1] | pct(2) }}</td>
+                <td class="n">{{ result.margin_bp | bp }}</td>
+                <td class="n">{{ result.raroc | pct(1) }}</td>
+                <td class="n strong">{{ result.rac_per_lead | dec }}</td>
+                <td class="n">{% if result.rac_test %}{{ result.rac_test.difference | dec }}{% else %}—{% endif %}</td>
+                <td class="n">
+                  {% if result.rac_test %}{{ result.rac_test.t | dec }}
+                    {% if result.boundary_crossed %}<span class="chip success">franchie</span>{% endif %}
+                  {% else %}—{% endif %}
+                </td>
+                <td class="n">{% if result.prob_beats_control is not none %}{{ (result.prob_beats_control * 100) | round(1) }} %{% else %}—{% endif %}</td>
+                <td class="n">
+                  {{ result.mean_pd_converted | pct(2) }}
+                  {% if result.adverse_selection %}<span class="chip warning">derive</span>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <caption>
+            La colonne <strong>EUR / lead</strong> est la metrique de decision : contribution ajustee
+            du risque par lead expose. Les colonnes <strong>t</strong> et <strong>P(rapporte +)</strong>
+            portent sur cette contribution, jamais sur le taux de conversion — c'est aussi sur elle
+            que porte la frontiere sequentielle. Une cellule peut convertir moins et rapporter plus.
+          </caption>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid k3">
+      <div class="card">
+        <header><h3>Take-up et incertitude</h3></header>
+        {{ takeup }}
+      </div>
+      <div class="card">
+        <header><h3>Contribution par lead</h3></header>
+        {{ contribution }}
+      </div>
+      <div class="card">
+        <header><h3>Elasticite-prix</h3></header>
+        {{ elasticity_chart }}
+      </div>
+    </div>
+
+    <div class="card">
+      <header>
+        <h2>Suivi sequentiel</h2>
+        <span class="hint">
+          La frontiere d'arret de type O'Brien-Fleming est fixee avant le lancement. Tant que la
+          statistique reste dessous, il n'y a rien a decider — c'est ce qui protege du peeking.
+        </span>
+      </header>
+      {{ sequential }}
+    </div>
+
+    {% if analysis.elasticity %}
+    <div class="card">
+      <header><h2>Lecture economique de l'elasticite</h2></header>
+      <div class="table-wrap">
+        <table class="data">
+          <tbody>
+            <tr><td>Elasticite estimee</td><td class="n strong">{{ analysis.elasticity.value | dec }}</td>
+                <td class="muted">{{ analysis.elasticity.method }}</td></tr>
+            {% if analysis.elasticity.points > 2 %}
+            <tr><td>Intervalle de confiance</td>
+                <td class="n">{{ analysis.elasticity.ci_low | dec }} – {{ analysis.elasticity.ci_high | dec }}</td>
+                <td class="muted">erreur-type {{ analysis.elasticity.std_error | dec }} · R2 {{ analysis.elasticity.r_squared | dec }} · {{ analysis.elasticity.points }} points</td></tr>
+            {% endif %}
+            <tr><td>Regime de demande</td>
+                <td class="n">{{ 'elastique' if analysis.elasticity.is_elastic else 'inelastique' }}</td>
+                <td class="muted">
+                  {% if analysis.elasticity.is_elastic %}
+                    |e| &gt; 1 : une baisse de prix augmente le chiffre d'affaires, pas necessairement la marge.
+                  {% else %}
+                    |e| &lt; 1 : une hausse de prix augmente le chiffre d'affaires.
+                  {% endif %}
+                </td></tr>
+            {% if analysis.elasticity.lerner_index %}
+            <tr><td>Taux de marge optimal (Lerner)</td>
+                <td class="n">{{ analysis.elasticity.lerner_index | pct(1) }}</td>
+                <td class="muted">(p* − c) / p* = −1/e</td></tr>
+            {% endif %}
+            {% if analysis.elasticity.optimal_rate %}
+            <tr><td>Prix optimal theorique</td>
+                <td class="n strong">{{ analysis.elasticity.optimal_rate | pct }}</td>
+                <td class="muted">
+                  {% if analysis.elasticity.optimal_is_extrapolated %}
+                    <span class="chip warning">extrapolation</span>
+                    hors de l'enveloppe testee [{{ analysis.elasticity.tested_range[0] | pct }} ;
+                    {{ analysis.elasticity.tested_range[1] | pct }}] — hypothese de modele, pas une mesure.
+                  {% else %}
+                    a l'interieur de l'enveloppe testee : la valeur est soutenue par des observations.
+                  {% endif %}
+                </td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="stack">
+    <div class="card lifted">
+      <header><h3>Plancher de rentabilite</h3></header>
+      {{ donut }}
+      <div class="table-wrap">
+        <table class="data">
+          <tbody>
+            {% for label, value in experiment.price_floor.components %}
+              <tr><td>{{ label }}</td><td class="n">{{ (value * 10000) | round(0) | int }} bps</td></tr>
+            {% endfor %}
+            <tr><td class="strong">Plancher</td><td class="n strong">{{ analysis.floor_rate | pct }}</td></tr>
+            <tr><td>Cout des fonds propres</td><td class="n">{{ experiment.cost.hurdle_rate | pct(1) }}</td></tr>
+            <tr><td>Capital immobilise</td><td class="n">{{ experiment.cost.capital_intensity | pct(2) }}</td></tr>
+          </tbody>
+          <caption>
+            r<sub>plancher</sub> = f + o + PD×LGD + k×(h − f). Un prix sous ce seuil detruit de la
+            valeur meme s'il est comptablement profitable.
+          </caption>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <header><h3>Integrite du test</h3></header>
+      <div class="table-wrap">
+        <table class="data">
+          <tbody>
+            {% if analysis.total_exposed > 0 %}
+            <tr><td>SRM (chi2, {{ analysis.srm.df }} ddl)</td>
+                <td class="n">{{ analysis.srm.chi_square | dec }}</td>
+                <td><span class="chip {{ 'success' if analysis.srm.passed else 'danger' }}">
+                  {{ 'conforme' if analysis.srm.passed else 'echec' }}</span></td></tr>
+            <tr><td>p-value</td><td class="n" colspan="2">{{ analysis.srm.p_value | pvalue }}</td></tr>
+            {% else %}
+            <tr><td>SRM</td><td class="n" colspan="2"><span class="muted">aucun lead expose</span></td></tr>
+            {% endif %}
+            <tr><td>Information accumulee</td>
+                <td class="n" colspan="2">{{ (analysis.information_fraction * 100) | round(0) | int }} %</td></tr>
+            <tr><td>Frontiere d'arret</td><td class="n" colspan="2">
+              {% if analysis.information_fraction >= 0.02 %}|t| ≥ {{ analysis.boundary | dec }}
+              {% else %}<span class="muted">non applicable</span>{% endif %}
+            </td></tr>
+            <tr><td>Temoin preserve</td><td class="n" colspan="2">{{ experiment.holdout_share | pct(0) }}</td></tr>
+            <tr><td>Exposition</td><td class="n" colspan="2">{{ experiment.exposure | pct(1) }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <header><h3>Garde-fous — avant lancement</h3></header>
+      {% with checks = report.pre_launch.checks %}
+        {% include "partials/_checks.html" %}
+      {% endwith %}
+    </div>
+
+    <div class="card">
+      <header><h3>Garde-fous — en production</h3></header>
+      {% with checks = report.runtime.checks %}
+        {% include "partials/_checks.html" %}
+      {% endwith %}
+    </div>
+
+    <div class="card">
+      <header><h3>Tracabilite</h3></header>
+      <table class="data">
+        <tbody>
+          <tr><td>Cle</td><td class="n">{{ experiment.key }}</td></tr>
+          <tr><td>Sel d'affectation</td><td class="n">{{ experiment.salt }}</td></tr>
+          <tr><td>Conçu par</td><td class="n">{{ experiment.created_by or '—' }}</td></tr>
+          <tr><td>Valide par</td><td class="n">{{ experiment.approved_by or '—' }}</td></tr>
+          <tr><td>Active le</td><td class="n">{{ experiment.activated_at | when }}</td></tr>
+        </tbody>
+      </table>
+      <p class="caption">Empreinte de configuration</p>
+      <p class="hash">{{ config_hash }}</p>
+      <p class="caption">
+        Le sel et cette empreinte suffisent a rejouer n'importe quelle affectation servie :
+        <code>flask replay {{ experiment.key }} &lt;identifiant&gt;</code>. Aucune table
+        d'affectation n'est conservee, donc aucune seconde verite ne peut diverger.
+      </p>
+    </div>
+
+    <div class="card">
+      <header><h3>Journal de l'experience</h3></header>
+      <ul class="ledger">
+        {% for entry in history[:8] %}
+          <li>
+            <span class="seq">#{{ entry.seq }}</span>
+            <span>
+              <span class="event">{{ entry.event }}</span>
+              <span class="meta">{{ entry.recorded_at | when }} · {{ entry.actor }}</span>
+              <span class="chain">{{ entry.short_prev }} → <span class="link">{{ entry.short_hash }}</span></span>
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+      <a class="btn ghost" href="{{ url_for('web.audit_trail') }}">Piste d'audit complete</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
