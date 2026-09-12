@@ -1,0 +1,21 @@
+{#
+  Liste de controles. Chaque etat est double d'un symbole ET d'un libelle :
+  la couleur seule ne porte jamais l'information (cf. charte, section "Etats").
+#}
+<ul class="checklist">
+  {% for check in checks %}
+    <li class="{% if check.passed %}ok{% elif check.severity.value == 'blocking' %}ko-blocking{% else %}ko-warning{% endif %}">
+      <span class="mark" aria-hidden="true">{% if check.passed %}&#10003;{% elif check.severity.value == 'blocking' %}&#10007;{% else %}&#9888;{% endif %}</span>
+      <span class="body">
+        <span class="name">
+          {{ check.label }}
+          {% if not check.passed %}
+            <span class="chip {{ 'danger' if check.severity.value == 'blocking' else 'warning' }}">{{ check.severity.label }}</span>
+          {% endif %}
+          <span class="code">{{ check.code }}</span>
+        </span>
+        <span class="detail">{{ check.detail }}</span>
+      </span>
+    </li>
+  {% endfor %}
+</ul>

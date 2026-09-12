@@ -1,0 +1,7 @@
+# GAAP - dependances d'execution.
+#
+# Le moteur (domaine, statistiques, decision) n'utilise que la bibliotheque
+# standard : ni numpy, ni scipy, ni pandas. Ce choix est documente dans
+# gaap/domain/stats.py - il sert l'auditabilite et la reproductibilite, pas la
+# performance. Flask n'est requis que pour l'interface et l'API.
+Flask>=3.0,<4.0

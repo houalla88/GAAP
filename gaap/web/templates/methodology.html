@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Note de methode{% endblock %}
+{% block heading %}Note de methode{% endblock %}
+{% block lede %}
+  Formules appliquees, hypotheses retenues, limites assumees. Placee dans l'outil et non a cote,
+  parce qu'une methode qu'il faut aller chercher ailleurs n'est pas opposable.
+{% endblock %}
+
+{% block content %}
+<div class="card">
+<div class="prose">
+
+<h2>1. Affectation</h2>
+<p>
+  L'affectation est une <strong>fonction pure</strong> du sel de l'experience et de l'identifiant
+  du sujet. Elle n'est pas stockee.
+</p>
+<div class="formula">u = uint64( SHA-256( sel ‖ espace ‖ identifiant )[0:8] ) / 2^64</div>
+<p>
+  Deux espaces de nommage independants sont utilises : l'un decide de l'appartenance au temoin
+  preserve, l'autre de la cellule. Les melanger correlerait le temoin au prix — un biais qui
+  ne se voit dans aucun total.
+</p>
+<p>Trois consequences : l'offre est stable pour un meme client, toute affectation passee est
+  rejouable a partir du sel, et un sujet est re-randomise d'une experience a l'autre.</p>
+
+<h2>2. Plancher de rentabilite</h2>
+<div class="formula">r<sub>plancher</sub> = f + o + PD × LGD + k × (h − f),  avec k = RW × ratio CET1</div>
+<p>
+  f est le taux de cession interne, o les couts operationnels annualises rapportes a l'encours
+  moyen, PD × LGD la perte attendue au sens Bale / IFRS 9, k l'intensite capitalistique et h le
+  cout des fonds propres. Le capital immobilise ne rapporte pas f mais doit rapporter h : son
+  cout marginal est l'ecart entre les deux.
+</p>
+<p><strong>Simplifications assumees.</strong> Pas d'effet fiscal, pas de valorisation de l'option
+  de remboursement anticipe, hasard de defaut constant sur la duree, revenus accessoires
+  (assurance, frais annexes) exclus. Les trois premieres abaissent le plancher reel, la derniere
+  le releve : la valeur retenue est donc une approximation, et elle est conservative sur le poste
+  qui compte le plus, le risque.</p>
+
+<h2>3. Metrique de decision</h2>
+<div class="formula">RAC = take-up × (r<sub>effectif</sub> − r<sub>plancher</sub>) × K × D</div>
+<p>
+  Contribution ajustee du risque par lead expose. K est le capital moyen, D le facteur de duree
+  (encours moyen rapporte au capital, multiplie par la maturite). Les frais de dossier sont
+  convertis en equivalent-taux par <code>frais / (K × D)</code> afin que les deux leviers de prix
+  soient comparables sur une meme echelle.
+</p>
+<p>
+  GAAP ne tranche jamais sur le taux de conversion. Le prix qui convertit le mieux est par
+  construction le plus bas admissible ; il ne maximise la valeur que si la demande est
+  suffisamment elastique, ce qui est une question empirique et non un postulat.
+</p>
+
+<h2>4. Inference</h2>
+<ul>
+  <li><strong>Intervalles sur une proportion</strong> : score de Wilson (1927), conserve sa
+    couverture aux faibles taux — le regime usuel d'un take-up de credit.</li>
+  <li><strong>Ecart entre deux proportions</strong> : methode hybride de Newcombe (1998,
+    methode 10), construite sur les bornes de Wilson.</li>
+  <li><strong>Metrique continue</strong> : test t de Welch. La variance de la contribution depend
+    du prix de la cellule, donc l'homoscedasticite est fausse par construction.</li>
+  <li><strong>Comparaisons multiples</strong> : correction de Bonferroni sur le nombre de
+    comparaisons au controle.</li>
+  <li><strong>Integrite de l'allocation</strong> : test du chi2 d'adequation (SRM), seuil severe
+    a p &lt; 0,001. Un echec invalide la lecture, quelle que soit l'apparence des chiffres.</li>
+  <li><strong>Arret sequentiel</strong> : frontiere de type O'Brien-Fleming, approximation de
+    Lan-DeMets <code>z*(t) = z<sub>α/2</sub> / √t</code>. Conservatrice au debut, elle converge
+    vers le seuil nominal. Elle porte sur la contribution, pas sur la conversion.</li>
+  <li><strong>Lecture bayesienne</strong> : posteriors Beta a prior uniforme, P(variante &gt;
+    controle) en forme fermee, perte attendue par Monte-Carlo a graine deterministe.</li>
+</ul>
+
+<h2>5. Elasticite</h2>
+<div class="formula">ln q = a + e × ln p,  poids w<sub>i</sub> = n<sub>i</sub> p<sub>i</sub> / (1 − p<sub>i</sub>)</div>
+<p>
+  Regression log-log ponderee des que trois paliers de prix sont disponibles ; les poids sont
+  l'inverse de la variance de <code>ln p</code> par la methode delta. A deux paliers, seule
+  l'elasticite d'arc (point milieu) est calculable, sans incertitude estimable.
+</p>
+<p>
+  Le prix optimal theorique derive de la regle de Lerner,
+  <code>(p* − c) / p* = −1/e</code>, soit <code>p* = c·e / (1 + e)</code> pour e &lt; −1.
+  <strong>GAAP borne systematiquement cette valeur a l'enveloppe des prix testes</strong> et
+  signale toute extrapolation : sortir de l'enveloppe, c'est remplacer une mesure par une
+  hypothese de forme fonctionnelle.
+</p>
+
+<h2>6. Anti-selection</h2>
+<p>
+  A chaque cellule, GAAP compare la PD moyenne des dossiers <em>acceptes</em> a celle du
+  controle (test de Welch). Une hausse significative lorsque le prix monte signale que la marge
+  supplementaire est partiellement compensee par une degradation du melange de risque — c'est
+  le mecanisme d'anti-selection, invisible d'un test de conversion.
+</p>
+<p>
+  <strong>Limite importante.</strong> La PD utilisee est celle d'octroi, produite par le modele
+  de score. Elle anticipe la perte, elle ne la constate pas. Toute conclusion sur le melange de
+  risque doit etre confirmee sur les cohortes a douze mois avant generalisation.
+</p>
+
+<h2>7. Ce que GAAP ne mesure pas</h2>
+<ul>
+  <li>La reaction de la concurrence a un changement de prix generalise.</li>
+  <li>L'effet du prix sur la valeur client a long terme (multi-detention, attrition, refinancement).</li>
+  <li>La saisonnalite et les effets de nouveaute au-dela de la fenetre du test.</li>
+  <li>Le comportement des clients exclus du test par garde-fou, par construction non observes.</li>
+  <li>La perte reellement constatee : seule la perte attendue au moment de l'octroi entre dans le calcul.</li>
+</ul>
+
+<h2>8. References</h2>
+<ul>
+  <li>Kohavi, Tang &amp; Xu (2020), <em>Trustworthy Online Controlled Experiments</em>, Cambridge
+    University Press — SRM, peeking, hierarchie des metriques.</li>
+  <li>Wilson (1927), <em>Journal of the American Statistical Association</em> 22(158) — intervalle de score.</li>
+  <li>Newcombe (1998), <em>Statistics in Medicine</em> 17(8) — intervalle sur une difference de proportions.</li>
+  <li>O'Brien &amp; Fleming (1979), <em>Biometrics</em> 35(3) ; Lan &amp; DeMets (1983),
+    <em>Biometrika</em> 70(3) — frontieres d'arret sequentielles.</li>
+  <li>Fleiss, Levin &amp; Paik (2003), <em>Statistical Methods for Rates and Proportions</em> — dimensionnement.</li>
+  <li>Lerner (1934), <em>Review of Economic Studies</em> 1(3) — indice de pouvoir de marche.</li>
+  <li>Comite de Bale (2017), <em>Bale III : finalisation des reformes</em> — ponderations de risque, exigences de fonds propres.</li>
+  <li>IFRS 9, <em>Instruments financiers</em> — pertes de credit attendues.</li>
+</ul>
+
+<p class="caption">
+  Cette note decrit l'implementation de reference de GAAP. Les valeurs de cout du risque, de
+  ponderation et de cout des fonds propres utilisees dans un deploiement doivent provenir des
+  dispositifs ALM et de modelisation de l'etablissement, et non de cette documentation.
+</p>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Laboratoire{% endblock %}
+{% block heading %}Laboratoire — pre-mortem d'un plan{% endblock %}
+{% block lede %}
+  Avant d'engager de la marge reelle : ce plan est-il capable de conclure, combien coutera
+  l'apprentissage, et avec quelle precision mesurera-t-on l'elasticite ?
+{% endblock %}
+
+{% block content %}
+<div class="grid main-side">
+  <div class="stack">
+    <div class="card">
+      <header>
+        <h2>Hypotheses de simulation</h2>
+        <span class="hint">Modele generateur : demande a elasticite constante q(p) = q<sub>ref</sub> × (p / p<sub>ref</sub>)<sup>e</sup>.</span>
+      </header>
+      <form method="post" action="{{ url_for('web.lab', key=experiment.key if experiment else None) }}">
+        <div class="grid k4">
+          <div class="field">
+            <label for="plan">Plan a eprouver</label>
+            <select id="plan" name="plan">
+              {% for item in experiments %}
+                <option value="{{ item.key }}" {% if experiment and item.key == experiment.key %}selected{% endif %}>{{ item.name }}</option>
+              {% endfor %}
+            </select>
+            <span class="help">Le plan selectionne est eprouve au lancement.</span>
+          </div>
+          <div class="field">
+            <label for="elasticity">Elasticite supposee</label>
+            <input class="n" id="elasticity" name="elasticity" value="{{ params.true_elasticity if params else '-3,5' }}">
+            <span class="help">Valeur negative. Issue d'un test anterieur ou de la litterature.</span>
+          </div>
+          <div class="field">
+            <label for="baseline">Take-up de reference (%)</label>
+            <input class="n" id="baseline" name="baseline" value="{{ (params.baseline_take_up * 100) | dec if params else '6,00' }}">
+          </div>
+          <div class="field">
+            <label for="volume">Volume total (leads)</label>
+            <input class="n" id="volume" name="volume" value="{{ params.total_volume if params else 40000 }}">
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn primary" type="submit">Lancer {{ params.replications if params else 300 }} replications</button>
+          <span class="caption">Graine fixee : deux executions sur les memes hypotheses donnent le meme resultat.</span>
+        </div>
+      </form>
+    </div>
+
+    {% if result %}
+    <div class="card">
+      <header>
+        <h2>Ce que ce plan produirait</h2>
+        <span class="hint">{{ result.replications }} replications · graine {{ result.assumptions.seed }}</span>
+      </header>
+      <div class="grid k4">
+        <div class="kpi accent">
+          <div class="label">Puissance reelle</div>
+          <div class="value">{{ (result.power * 100) | round(0) | int }} %</div>
+          <div class="note">probabilite de basculer sur la bonne cellule</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Bascule erronee</div>
+          <div class="value">{{ (result.false_switch_rate * 100) | round(1) }} %</div>
+          <div class="note">bascule sur une cellule sous-optimale</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Taux de conclusion</div>
+          <div class="value">{{ (result.conclusive_rate * 100) | round(0) | int }} %</div>
+          <div class="note">replications aboutissant a une decision</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Cout d'apprentissage</div>
+          <div class="value">{{ result.learning_cost_mean | eur }}</div>
+          <div class="note">P5 {{ result.learning_cost_p05 | eur }} · P95 {{ result.learning_cost_p95 | eur }}</div>
+        </div>
+      </div>
+
+      <div class="grid k2 spaced">
+        <div>
+          <h3>Distribution des verdicts</h3>
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Verdict</th><th class="n">Replications</th><th class="n">Part</th></tr></thead>
+              <tbody>
+                {% for verdict, count in result.verdict_counts.items() | sort(attribute='1', reverse=true) %}
+                  {% set libelle, ton = verdict_labels.get(verdict, (verdict, 'neutral')) %}
+                  <tr>
+                    <td><span class="chip {{ ton }}">{{ libelle }}</span></td>
+                    <td class="n">{{ count | num }}</td>
+                    <td class="n">{{ (100 * count / result.replications) | round(1) }} %</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h3>Precision de l'elasticite</h3>
+          <div class="table-wrap">
+            <table class="data">
+              <tbody>
+                <tr><td>Elasticite vraie (hypothese)</td><td class="n">{{ result.assumptions.true_elasticity | dec }}</td></tr>
+                <tr><td>Estimation moyenne</td><td class="n strong">{{ result.elasticity_mean | dec }}</td></tr>
+                <tr><td>Ecart-type des estimations</td><td class="n">{{ result.elasticity_sd | dec }}</td></tr>
+                <tr><td>Couverture de l'IC a 95 %</td><td class="n">{{ (result.elasticity_coverage * 100) | round(1) }} %</td></tr>
+                <tr><td>Cellule optimale reelle</td><td class="n">{{ result.true_best_cell }}</td></tr>
+              </tbody>
+              <caption>
+                Une couverture nettement inferieure a 95 % signale un plan dont les intervalles
+                mentent — typiquement trop peu de paliers de prix pour identifier la pente.
+              </caption>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <header><h2>Take-up attendu par cellule sous l'hypothese</h2></header>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Cellule</th><th class="n">Prix</th><th class="n">Take-up simule</th></tr></thead>
+          <tbody>
+            {% for cell in experiment.cells %}
+              <tr class="{{ 'is-control' if cell.is_control }}">
+                <td>{{ cell.label }}</td>
+                <td class="n">{{ cell.rate | pct }}{% if cell.fee %} + {{ cell.fee | eur }}{% endif %}</td>
+                <td class="n strong">{{ result.per_cell_true_take_up[cell.key] | pct }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="stack">
+    <div class="card">
+      <header><h3>Pourquoi simuler avant</h3></header>
+      <p class="caption">
+        Un test tarifaire consomme de la marge pendant qu'il tourne. Le lancer sans savoir s'il
+        peut conclure revient a payer une information qu'on n'obtiendra pas.
+      </p>
+      <p class="caption">
+        Trois sorties gouvernent la decision de lancer : la <strong>puissance reelle</strong>
+        (et non celle du plan theorique), la <strong>queue haute du cout</strong> — c'est le P95
+        qui se defend en comite, pas la moyenne — et la <strong>precision attendue sur
+        l'elasticite</strong>, qui conditionne la valeur residuelle du test une fois la decision prise.
+      </p>
+    </div>
+    <div class="card">
+      <header><h3>Limites du modele</h3></header>
+      <ul class="checklist">
+        <li class="ko-warning"><span class="mark" aria-hidden="true">&#9888;</span><span class="body">
+          <span class="name">Elasticite constante</span>
+          <span class="detail">Ni courbure, ni seuil psychologique, ni palier concurrentiel.</span></span></li>
+        <li class="ko-warning"><span class="mark" aria-hidden="true">&#9888;</span><span class="body">
+          <span class="name">Pas d'anti-selection</span>
+          <span class="detail">La PD est simulee sans derive : le laboratoire dimensionne la detection
+            d'un effet de prix, pas celle d'une degradation du melange de risque.</span></span></li>
+        <li class="ko-warning"><span class="mark" aria-hidden="true">&#9888;</span><span class="body">
+          <span class="name">Population stationnaire</span>
+          <span class="detail">Aucune saisonnalite, aucune reaction de la concurrence.</span></span></li>
+      </ul>
+      <p class="caption">
+        Les resultats du laboratoire ne sont jamais melanges aux resultats reels : ils
+        dimensionnent, ils ne predisent pas.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="GAAP">
+  <rect width="32" height="32" rx="7" fill="#090b10"/>
+  <path d="M6 22.5 L12 12 L16 19 L20 8.5 L26 22.5" fill="none" stroke="#12d7b0"
+        stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="20" cy="8.5" r="2.6" fill="#12d7b0"/>
+</svg>

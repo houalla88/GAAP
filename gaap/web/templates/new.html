@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Nouveau plan{% endblock %}
+{% block heading %}Concevoir un plan tarifaire{% endblock %}
+{% block lede %}
+  Le plan est enregistre en brouillon. Il devra franchir les garde-fous et la validation d'un
+  second intervenant avant toute mise en production — un test de prix modifie le produit vendu.
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{{ url_for('web.experiment_new') }}">
+  <div class="grid main-side">
+    <div class="stack">
+      <div class="card">
+        <header><h2>Identification</h2></header>
+        <div class="grid k2">
+          <div class="field">
+            <label for="key">Cle technique</label>
+            <input id="key" name="key" required placeholder="pp-taeg-2026q4" pattern="[a-z0-9\-]{3,48}">
+            <span class="help">Minuscules, chiffres et tirets. Sert de reference dans la piste d'audit.</span>
+          </div>
+          <div class="field">
+            <label for="name">Intitule</label>
+            <input id="name" name="name" required placeholder="Pret personnel — echelle de TAEG">
+          </div>
+          <div class="field">
+            <label for="product">Produit</label>
+            <input id="product" name="product" placeholder="Pret personnel">
+          </div>
+          <div class="field">
+            <label for="owner">Equipe responsable</label>
+            <input id="owner" name="owner" placeholder="Pricing &amp; Analytics">
+          </div>
+        </div>
+        <div class="field">
+          <label for="hypothesis">Hypothese testee</label>
+          <textarea id="hypothesis" name="hypothesis" rows="3"
+            placeholder="Formuler une hypothese falsifiable, avec le sens attendu de l'effet."></textarea>
+          <span class="help">
+            Une hypothese ecrite avant le test est ce qui distingue une experience d'une peche aux resultats.
+          </span>
+        </div>
+      </div>
+
+      <div class="card">
+        <header>
+          <h2>Cellules de prix</h2>
+          <span class="hint">La premiere ligne est le controle : c'est le prix actuellement servi.</span>
+        </header>
+        <div class="cells-grid">
+          <div class="field"><label>Role</label><input value="Controle" readonly></div>
+          <div class="field"><label for="r0">TAEG (%)</label><input class="n" id="r0" name="cell_rate" required value="6,90"></div>
+          <div class="field"><label for="f0">Frais (EUR)</label><input class="n" id="f0" name="cell_fee" value="0"></div>
+          <div class="field"><label for="w0">Poids</label><input class="n" id="w0" name="cell_weight" required value="0,40"></div>
+
+          <div class="field"><label>Variante 1</label><input value="Cellule de test" readonly></div>
+          <div class="field"><label for="r1">TAEG (%)</label><input class="n" id="r1" name="cell_rate" value="7,35"></div>
+          <div class="field"><label for="f1">Frais (EUR)</label><input class="n" id="f1" name="cell_fee" value="0"></div>
+          <div class="field"><label for="w1">Poids</label><input class="n" id="w1" name="cell_weight" value="0,30"></div>
+
+          <div class="field"><label>Variante 2</label><input value="Cellule de test" readonly></div>
+          <div class="field"><label for="r2">TAEG (%)</label><input class="n" id="r2" name="cell_rate" value="7,80"></div>
+          <div class="field"><label for="f2">Frais (EUR)</label><input class="n" id="f2" name="cell_fee" value="0"></div>
+          <div class="field"><label for="w2">Poids</label><input class="n" id="w2" name="cell_weight" value="0,30"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <header>
+          <h2>Cout du risque</h2>
+          <span class="hint">Alimente le plancher de rentabilite. Valeurs issues de l'ALM et du modele de score.</span>
+        </header>
+        <div class="grid k4">
+          <div class="field"><label for="funding_rate">Refinancement (%)</label><input class="n" id="funding_rate" name="funding_rate" value="2,85"></div>
+          <div class="field"><label for="operating_cost_rate">Couts operationnels (%)</label><input class="n" id="operating_cost_rate" name="operating_cost_rate" value="1,10"></div>
+          <div class="field"><label for="pd">PD 12 mois (%)</label><input class="n" id="pd" name="pd" value="2,10"></div>
+          <div class="field"><label for="lgd">LGD (%)</label><input class="n" id="lgd" name="lgd" value="62,0"></div>
+          <div class="field"><label for="risk_weight">Ponderation RWA (%)</label><input class="n" id="risk_weight" name="risk_weight" value="75,0"></div>
+          <div class="field"><label for="capital_ratio">Ratio de fonds propres (%)</label><input class="n" id="capital_ratio" name="capital_ratio" value="12,5"></div>
+          <div class="field"><label for="hurdle_rate">Cout des fonds propres (%)</label><input class="n" id="hurdle_rate" name="hurdle_rate" value="11,0"></div>
+          <div class="field"><label for="principal">Capital moyen (EUR)</label><input class="n" id="principal" name="principal" value="12500"></div>
+          <div class="field">
+            <label for="duration_factor">Facteur de duree</label>
+            <input class="n" id="duration_factor" name="duration_factor" value="2,4">
+            <span class="help">Encours moyen rapporte au capital, multiplie par la maturite en annees.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <header><h2>Garde-fous et plan statistique</h2></header>
+        <div class="grid k4">
+          <div class="field"><label for="holdout_share">Temoin preserve (%)</label><input class="n" id="holdout_share" name="holdout_share" value="5,0"></div>
+          <div class="field"><label for="max_exposure">Exposition maximale (%)</label><input class="n" id="max_exposure" name="max_exposure" value="50,0"></div>
+          <div class="field"><label for="max_delta_bp">Amplitude maximale (bps)</label><input class="n" id="max_delta_bp" name="max_delta_bp" value="120"></div>
+          <div class="field"><label for="max_duration_days">Duree maximale (jours)</label><input class="n" id="max_duration_days" name="max_duration_days" value="45"></div>
+          <div class="field"><label for="min_sample_per_cell">Volume minimal / cellule</label><input class="n" id="min_sample_per_cell" name="min_sample_per_cell" value="7000"></div>
+          <div class="field">
+            <label for="loss_tolerance_per_lead">Tolerance de perte (EUR / lead)</label>
+            <input class="n" id="loss_tolerance_per_lead" name="loss_tolerance_per_lead" value="5,00">
+            <span class="help">Seuil d'arret de protection, fixe avant de voir les resultats.</span>
+          </div>
+          <div class="field"><label for="alpha">Risque alpha (%)</label><input class="n" id="alpha" name="alpha" value="5,0"></div>
+          <div class="field"><label for="power">Puissance cible (%)</label><input class="n" id="power" name="power" value="80,0"></div>
+          <div class="field"><label for="baseline_rate">Take-up de reference (%)</label><input class="n" id="baseline_rate" name="baseline_rate" value="6,0"></div>
+          <div class="field"><label for="target_mde">Effet minimal a detecter (%)</label><input class="n" id="target_mde" name="target_mde" value="15,0"></div>
+          <div class="field"><label for="planned_volume">Volume prevu (leads)</label><input class="n" id="planned_volume" name="planned_volume" value="46000"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" type="submit">Enregistrer le brouillon</button>
+        <a class="btn ghost" href="{{ url_for('web.cockpit') }}">Annuler</a>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card lifted">
+        <header>
+          <h3>Dimensionnement</h3>
+          <span class="hint">Recalcule pendant la saisie.</span>
+        </header>
+        <div id="power-readout"
+             data-endpoint="{{ url_for('api.post_power') }}"
+             data-fallback="Activez JavaScript pour le calcul en direct, ou consultez la note de methode.">
+          <div class="line"><span>Comparaisons</span><span class="v" data-field="comparisons">—</span></div>
+          <div class="line"><span>alpha corrige</span><span class="v" data-field="alpha_adjusted">—</span></div>
+          <div class="line"><span>Requis par cellule</span><span class="v" data-field="required_per_cell">—</span></div>
+          <div class="line"><span>Disponible par cellule</span><span class="v" data-field="available_per_cell">—</span></div>
+          <div class="line"><span>Effet detectable</span><span class="v" data-field="detectable_effect">—</span></div>
+          <div class="line"><span>Verdict</span><span class="v" data-field="verdict">—</span></div>
+        </div>
+        <p class="caption">
+          Un plan sous-dimensionne consomme de la marge sans produire d'information exploitable.
+          GAAP bloque l'activation en dessous de la moitie du volume requis et avertit au-dela.
+        </p>
+      </div>
+
+      <div class="card">
+        <header><h3>Ce que GAAP verifiera</h3></header>
+        <ul class="checklist">
+          <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
+            <span class="name">Plancher de rentabilite</span>
+            <span class="detail">Aucune cellule sous f + o + PD×LGD + k×(h − f).</span></span></li>
+          <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
+            <span class="name">Amplitude et exposition</span>
+            <span class="detail">Ecart de prix borne, part du trafic exposee plafonnee.</span></span></li>
+          <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
+            <span class="name">Criteres proteges</span>
+            <span class="detail">Aucun ciblage adosse a un critere de discrimination prohibe.</span></span></li>
+          <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
+            <span class="name">Segregation des taches</span>
+            <span class="detail">Le concepteur du plan ne peut pas le valider.</span></span></li>
+          <li class="ok"><span class="mark" aria-hidden="true">&#10003;</span><span class="body">
+            <span class="name">Puissance statistique</span>
+            <span class="detail">Volume suffisant pour detecter l'effet declare.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/design.js') }}" defer></script>
+{% endblock %}
