@@ -1,10 +1,19 @@
-"""GAAP - Governed A/B Assignment for Pricing.
+"""GAAP - Gouvernance, Arbitrage et Audit du Prix.
 
-Moteur d'experimentation tarifaire gouvernee. L'acronyme est un clin d'oeil
-assume aux *Generally Accepted Accounting Principles* : GAAP applique au prix
-la meme exigence que la comptabilite applique aux comptes - des regles fixees
-avant les faits, une piste d'audit, et une opinion motivee plutot qu'un chiffre
-nu.
+Moteur d'experimentation tarifaire. Chaque lettre porte un pilier du systeme :
+
+- **Gouvernance** : garde-fous qui refusent par defaut, validation par un
+  second intervenant, plan fige des l'activation.
+- **Arbitrage** : la decision tranche le compromis volume / marge sur la
+  contribution ajustee du risque, jamais sur le taux de conversion.
+- **Audit** : piste en ajout seul scellee par chaînage d'empreintes, et
+  affectations rejouables sans table de correspondance.
+- **Prix** : l'objet du test.
+
+L'acronyme est un clin d'oeil assume aux *Generally Accepted Accounting
+Principles* : GAAP applique au prix la meme exigence que la comptabilite
+applique aux comptes - des regles fixees avant les faits, une piste d'audit, et
+une opinion motivee plutot qu'un chiffre nu.
 
 Assemblage de l'application selon le patron de fabrique : la configuration est
 injectee, jamais lue globalement, ce qui permet aux tests de monter une

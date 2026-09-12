@@ -1,7 +1,7 @@
 [project]
 name = "gaap"
 version = "1.0.0"
-description = "GAAP - Governed A/B Assignment for Pricing : moteur d'experimentation tarifaire gouvernee"
+description = "GAAP - Gouvernance, Arbitrage et Audit du Prix : moteur d'experimentation tarifaire"
 requires-python = ">=3.11"
 dependencies = ["Flask>=3.0,<4.0"]
 

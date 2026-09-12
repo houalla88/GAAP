@@ -2,7 +2,7 @@
 
 # GAAP
 
-**G**overned **A**/B **A**ssignment for **P**ricing
+**G**ouvernance, **A**rbitrage et **A**udit du **P**rix
 
 *Le prix se teste comme le reste. Il ne se décide pas comme le reste.*
 
@@ -15,12 +15,46 @@
 
 ---
 
-L'acronyme est un clin d'œil assumé aux *Generally Accepted Accounting Principles*. Il dit
-l'intention : appliquer au prix la même exigence que la comptabilité applique aux comptes — des
+## Le prix qui convertit le mieux est presque toujours celui qui détruit le plus de valeur
+
+C'est toute la raison d'être de ce moteur.
+
+Branchez un outil d'A/B testing classique sur un tarif : il désignera la cellule la moins chère.
+Elle convertit mieux — c'est mécanique. Sur le jeu de démonstration ci-dessous, cette cellule
+convertit à **7,87 %** et rapporte **10,25 € par lead exposé**. Celle qui convertit deux fois moins,
+à 4,04 %, en rapporte **21,65 €**. L'écart n'est pas un détail d'optimisation : c'est un doublement
+de la marge, sur la même population, pour une décision que le taux de conversion prend à l'envers.
+
+**GAAP tranche sur la contribution ajustée du risque, et sait expliquer pourquoi.** Derrière cette
+phrase : un plancher de rentabilité reconstitué poste par poste (refinancement, coûts opérationnels,
+PD × LGD, charge en capital réglementaire), une frontière d'arrêt séquentielle O'Brien-Fleming posée
+sur la marge et non sur la conversion, une détection d'anti-sélection — parce qu'un prix qui monte
+sélectionne les demandeurs qui ont le moins d'alternatives — et une piste d'audit scellée par
+chaînage d'empreintes. Le moteur statistique n'utilise aucune dépendance numérique : les lois du χ²,
+de Student et la normale inverse y sont implémentées et vérifiées contre des valeurs publiées, pour
+qu'un contrôle interne puisse relire la formule appliquée.
+
+Et chaque recommandation qu'il produit porte ses réserves : extrapolation hors de l'enveloppe des
+prix testés, PD d'octroi qui n'est pas la perte constatée, effet mesuré sur la seule fenêtre du
+test. Une recommandation tarifaire livrée sans ses limites est une recommandation incomplète.
+
+![Cockpit GAAP](docs/assets/01-cockpit.png)
+
+<div align="center"><sub>Le cockpit : le portefeuille d'expériences, trié par ce qui appelle une décision.</sub></div>
+
+---
+
+### Le nom
+
+Chaque lettre porte un pilier du système : la **gouvernance** refuse par défaut ce qui n'est pas
+admissible, l'**arbitrage** tranche le compromis volume / marge, l'**audit** rend chaque décision et
+chaque affectation rejouables — le tout appliqué au **prix**.
+
+L'acronyme est aussi un clin d'œil assumé aux *Generally Accepted Accounting Principles*, et il dit
+la même intention : appliquer au prix l'exigence que la comptabilité applique aux comptes — des
 règles fixées **avant** les faits, une piste d'audit, et une opinion motivée plutôt qu'un chiffre nu.
 
-GAAP est un moteur d'expérimentation tarifaire. Il fait pour le prix ce qu'un outil d'A/B testing
-fait pour un bouton, à ceci près que les quatre choses qui comptent ne sont pas les mêmes.
+---
 
 ## Pourquoi un test de prix n'est pas un test de bouton
 
@@ -38,14 +72,11 @@ optimise la mauvaise grandeur.
 
 ---
 
-## Le cockpit
+## Les cinq situations du jeu de démonstration
 
-![Cockpit GAAP](docs/assets/01-cockpit.png)
-
-Le portefeuille d'expériences, trié par ce qui appelle une décision. Cinq situations coexistent
-volontairement dans le jeu de démonstration, parce que ce sont les cinq qu'un moteur
-d'expérimentation tarifaire doit savoir traiter et que la plupart des outils d'A/B testing traitent
-mal :
+Elles coexistent volontairement dans le portefeuille ci-dessus, parce que ce sont les cinq qu'un
+moteur d'expérimentation tarifaire doit savoir traiter et que la plupart des outils d'A/B testing
+traitent mal :
 
 1. **Une bascule prouvée contre le taux de conversion** — la cellule qui convertit le moins est
    celle qui rapporte le plus.
@@ -400,5 +431,10 @@ la référence (`gaap/demo.py`).
 ---
 
 <div align="center">
-<sub><strong>DataOptimization.be</strong> — qualité des données, robustesse méthodologique, auditabilité.</sub>
+
+**[DataOptimization.be](https://www.dataoptimization.be)**
+
+<sub>Conseil en data science appliquée à la finance — pricing, sensibilité au prix,<br>
+risque de crédit, architecture analytique.</sub>
+
 </div>
