@@ -51,7 +51,7 @@
 <div class="card">
   <header>
     <h2>Portefeuille d'experiences</h2>
-    <span class="hint">Verdict calcule a la volee sur les donnees disponibles — aucune valeur figee en base.</span>
+    <span class="hint">Verdict calcule a la volee sur les donnees disponibles, aucune valeur figee en base.</span>
   </header>
   <div class="table-wrap">
     <table class="data">
@@ -90,7 +90,7 @@
               <span class="strong">{{ best.rac_per_lead | dec }} EUR</span><br>
               <span class="caption">{{ best.cell.label }}</span>
             </td>
-            <td>{% if row.spark %}{{ row.spark }}{% else %}<span class="caption">—</span>{% endif %}</td>
+            <td>{% if row.spark %}{{ row.spark }}{% else %}<span class="caption">n/a</span>{% endif %}</td>
             <td>
               {% if not report.pre_launch.cleared and report.experiment.status.value in ('draft', 'review') %}
                 <span class="chip danger">Plan refuse</span>
@@ -116,7 +116,7 @@
   <div class="stack">
     {% for report in actionable %}
       <div class="verdict {{ report.recommendation.verdict.tone }}">
-        <div class="kicker">{{ report.experiment.name }} — {{ report.recommendation.verdict.label }}</div>
+        <div class="kicker">{{ report.experiment.name }} : {{ report.recommendation.verdict.label }}</div>
         <h2>{{ report.recommendation.headline }}</h2>
         <ul>
           {% for line in report.recommendation.rationale[:2] %}<li>{{ line }}</li>{% endfor %}

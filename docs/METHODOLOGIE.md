@@ -2,7 +2,8 @@
 
 Document de référence de GAAP : formules appliquées, hypothèses retenues, limites assumées.
 Les docstrings du code renvoient à ce fichier. Une version condensée est servie par l'application
-elle-même sur `/methode` — une méthode qu'il faut aller chercher ailleurs n'est pas opposable.
+elle-même sur `/methode`, parce qu'une méthode qu'il faut aller chercher ailleurs n'est pas
+opposable.
 
 ---
 
@@ -35,7 +36,7 @@ effet :
 | Hasard de défaut constant sur la durée | Biais de signe indéterminé, faible sur des maturités courtes |
 | Revenus accessoires exclus (assurance, frais annexes) | Plancher **surestimé** |
 
-Le solde net est conservateur sur le poste qui compte le plus — le risque — ce qui est le sens dans
+Le solde net est conservateur sur le poste qui compte le plus, le risque, ce qui est le sens dans
 lequel une approximation de tarification bancaire doit se tromper.
 
 ### 1.2 RAROC
@@ -45,7 +46,7 @@ RAROC = (r − f × (1 − k) − o − PD × LGD) / k
 ```
 
 Le refinancement n'est facturé que sur la part d'encours financée par dette : la fraction `k`
-couverte par fonds propres ne porte pas d'intérêt. Omettre ce détail — erreur courante — sous-estime
+couverte par fonds propres ne porte pas d'intérêt. Omettre ce détail, erreur courante, sous-estime
 le RAROC de `f`, soit près de 300 bps au niveau actuel des taux, et fait passer pour destructeurs
 des prix qui rémunèrent correctement le capital.
 
@@ -59,7 +60,7 @@ Contribution par contrat :  C   = (r_effectif − r_plancher) × K × D
 Contribution par lead     :  RAC = take-up × C
 ```
 
-`K` est le capital moyen, `D` le facteur de durée — encours moyen rapporté au capital initial,
+`K` est le capital moyen, `D` le facteur de durée, soit l'encours moyen rapporté au capital initial,
 multiplié par la maturité en années. Pour un prêt amortissable linéairement sur `n` années, `D ≈ n/2`.
 
 Ce paramètre évite de comparer à tort une marge de 60 bps sur 12 mois et la même marge sur 84 mois.
@@ -85,7 +86,7 @@ u = uint64( SHA-256( sel ‖ espace ‖ identifiant )[0:8] ) / 2⁶⁴
 SHA-256 est retenu pour son uniformité et sa stabilité inter-langages : une réimplémentation Java
 côté moteur de tarification produit exactement les mêmes affectations.
 
-Deux espaces de nommage indépendants — `holdout` et `cell`. Les mélanger corrélerait le groupe
+Deux espaces de nommage indépendants, `holdout` et `cell`. Les mélanger corrélerait le groupe
 témoin au prix : biais discret, invisible dans les totaux, et fatal à l'interprétation.
 
 Ordre des contrôles, du plus contraignant au moins contraignant :
@@ -106,7 +107,7 @@ accident de configuration des poids.
 ### 3.1 Intervalles
 
 - **Une proportion** : score de Wilson (1927). Reste dans [0, 1] et conserve sa couverture nominale
-  aux faibles taux — le régime usuel d'un take-up de crédit (2 à 15 %).
+  aux faibles taux, le régime usuel d'un take-up de crédit (2 à 15 %).
 - **Différence de deux proportions** : méthode hybride de Newcombe (1998, méthode 10), construite
   sur les bornes de Wilson de chaque bras.
 
@@ -136,7 +137,7 @@ Conservateur, mais défendable devant un comité de tarification.
 
 Causes réelles d'un SRM, par ordre de fréquence : filtre appliqué en aval du routage, exclusion
 asymétrique, perte de trafic sur une cellule, déduplication différenciée. Jamais le tirage aléatoire
-lui-même — ce qui est vérifiable en simulant l'allocation sur des identifiants synthétiques
+lui-même, ce qui est vérifiable en simulant l'allocation sur des identifiants synthétiques
 (`allocation_profile`).
 
 ### 3.5 Arrêt séquentiel
@@ -162,7 +163,7 @@ Posteriors Beta à prior uniforme `Beta(1, 1)`, sur la **contribution** :
 P( p_B × c_B  >  p_A × c_A )
 ```
 
-estimée par Monte-Carlo à graine dérivée déterministiquement des comptages — deux exécutions sur les
+estimée par Monte-Carlo à graine dérivée déterministiquement des comptages : deux exécutions sur les
 mêmes données donnent le même chiffre, condition nécessaire pour qu'une décision de tarification
 soit rejouable en contrôle.
 
@@ -195,7 +196,7 @@ ln q = a + e × ln p          poids  w_i = n_i × p_i / (1 − p_i)
 
 Régression log-log pondérée dès trois paliers de prix. Les poids sont l'inverse de la variance de
 `ln p` par la méthode delta : une cellule peu exposée ou à faible take-up pèse moins, ce qui est
-exactement le comportement souhaité — c'est la cellule dont la mesure est la plus bruitée.
+exactement le comportement souhaité, puisque c'est la cellule dont la mesure est la plus bruitée.
 
 À deux paliers, seule l'élasticité d'arc (formule du point milieu) est calculable, sans incertitude
 estimable. Utilisable pour cadrer, pas pour décider.
@@ -212,7 +213,7 @@ précisément ce qu'on veut pouvoir voir avant de tarifer dessus.
 
 GAAP calcule cette valeur, **la borne à l'enveloppe des prix testés** et signale toute
 extrapolation. Sortir de l'enveloppe, c'est remplacer une mesure par une hypothèse de forme
-fonctionnelle — la recommandation devient alors une hypothèse de modèle et le moteur de décision
+fonctionnelle. La recommandation devient alors une hypothèse de modèle et le moteur de décision
 refuse de s'en servir seul.
 
 ---
@@ -223,8 +224,8 @@ refuse de s'en servir seul.
 celle du contrôle. Une hausse significative lorsque le prix monte signale que la marge
 supplémentaire est partiellement compensée par une dégradation du mélange de risque.
 
-Mécanisme : quand le prix monte, ce sont relativement plus les demandeurs à PD élevée — ceux qui ont
-le moins d'alternatives — qui acceptent. C'est le phénomène que la mesure du seul taux de conversion
+Mécanisme : quand le prix monte, ce sont relativement plus les demandeurs à PD élevée, ceux qui ont
+le moins d'alternatives, qui acceptent. C'est le phénomène que la mesure du seul taux de conversion
 ne voit pas, et qui fait qu'une hausse de prix rapporte moins qu'annoncé.
 
 **Limite importante.** La PD utilisée est celle d'octroi, produite par le modèle de score. Elle
@@ -239,8 +240,8 @@ Appliquée dans cet ordre, du plus contraignant au moins contraignant :
 
 | Rang | Condition | Verdict |
 |---|---|---|
-| 1 | SRM en échec | `INVALIDE` — aucune conclusion recevable |
-| 2 | Une cellule dépasse la tolérance de perte | `ARRÊT DE PROTECTION` — couper la cellule, pas l'expérience |
+| 1 | SRM en échec | `INVALIDE`, aucune conclusion recevable |
+| 2 | Une cellule dépasse la tolérance de perte | `ARRÊT DE PROTECTION` : couper la cellule, pas l'expérience |
 | 3 | Volume minimal non atteint | `VOLUME INSUFFISANT` |
 | 4 | Frontière franchie **et** IC sur la contribution strictement positif | `BASCULER` |
 | 5 | Information épuisée ou plus aucune variante crédible | `CONSERVER` |
@@ -285,7 +286,7 @@ livrée sans ses limites d'interprétation est une recommandation incomplète.
   *Review of Economic Studies*, 1(3), 157-175.
 - Comité de Bâle sur le contrôle bancaire (2017). *Bâle III : finalisation des réformes
   post-crise*. BRI.
-- IASB. *IFRS 9 — Instruments financiers*, section sur les pertes de crédit attendues.
+- IASB. *IFRS 9, Instruments financiers*, section sur les pertes de crédit attendues.
 
 Les valeurs de coût du risque, de pondération et de coût des fonds propres utilisées dans un
 déploiement doivent provenir des dispositifs ALM et de modélisation de l'établissement, et non de

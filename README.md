@@ -4,7 +4,7 @@
 
 **G**overnance · **A**rbitrage · **A**udit · **P**rice
 
-*Price can be tested like anything else. It cannot be decided like anything else.*
+*Price elasticity is not in your historical data. It is in an experiment.*
 
 [![Tests](https://img.shields.io/badge/tests-162%20passing-09806c)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-09806c)](pyproject.toml)
@@ -17,28 +17,42 @@
 
 ---
 
-## The price that converts best is almost always the one that destroys the most value
+## What it does
 
-That single sentence is the reason this engine exists.
+**GAAP tests prices in production.** Several tariffs served in parallel to comparable populations,
+randomly assigned, with the decision rule written down before the first customer sees an offer. The
+verdict is expressed in euros of risk-adjusted margin.
 
-Point a conventional A/B testing tool at a tariff and it will pick the cheapest cell. It converts
-better — mechanically. In the demonstration portfolio below, that cell converts at **7.87 %** and
-returns **€10.25 per exposed lead**. The cell that converts half as often, at 4.04 %, returns
-**€21.65**. This is not an optimisation detail: it is a doubling of margin, on the same population,
-on a decision that conversion rate gets backwards.
+## Why test rather than model
 
-**GAAP decides on risk-adjusted contribution, and can explain why.** Behind that sentence: a
-profitability floor rebuilt component by component (funding, operating costs, PD × LGD, regulatory
-capital charge), an O'Brien-Fleming sequential stopping boundary placed on margin rather than on
-conversion, adverse-selection detection — because a rising price selects the applicants with the
-fewest alternatives — and a hash-chained audit trail. The statistical engine carries no numerical
-dependency: the χ², Student and inverse-normal distributions are implemented in it and checked
-against published reference values, so that an internal control function can read the formula that
-was actually applied.
+Because your historical data cannot answer the question.
 
-And every recommendation it issues carries its own caveats: extrapolation beyond the envelope of
-tested prices, origination PD that is not realised loss, effect measured over the test window alone.
-A pricing recommendation delivered without its limits is an incomplete recommendation.
+You can build the elasticity model and fit it on three years of history. It will return a number, and
+that number will be wrong in a way no goodness-of-fit statistic reveals. Price was never set at
+random in your history: it moved with the competitive landscape, risk appetite, the marketing
+calendar, the funding curve, which are the very forces that also moved demand. The estimate therefore mixes
+the effect of price with the effect of everything that made price change. This is the identification
+problem of demand estimation, and adding controls does not solve it, because the confounders that
+matter are the ones nobody recorded.
+
+Randomised assignment severs that link. It is the only design that makes the measured effect causal,
+and it is inexpensive next to the alternative, which is discovering after a repricing that the true
+elasticity was twice what the model claimed.
+
+## Why speed is the point
+
+Every week at the wrong price is margin nobody recovers, and every week of testing is margin
+deliberately spent. So the loop has to close as early as the evidence allows, not at the end of a
+calendar quarter: a sequential stopping boundary fixed before launch, a Bayesian read-out expressed
+in euros per lead, and a lab that tells you, before a single euro is committed, whether the plan
+can conclude at all and what the learning will cost at the 95th percentile.
+
+Going fast is only defensible if the downside is bounded. That is what the guardrails are for: no
+cell below the profitability floor, a cap on exposed traffic, a loss tolerance per cell fixed before
+any result is seen, and an audit trail that makes the price served to a given customer eighteen
+months ago replayable from the salt alone.
+
+**Test, conclude, reprice, and be able to explain the decision afterwards.**
 
 ![GAAP cockpit](docs/assets/01-cockpit.png)
 
@@ -49,15 +63,30 @@ A pricing recommendation delivered without its limits is an incomplete recommend
 
 ---
 
+### One thing the engine refuses to get wrong
+
+The best-converting price is the lowest admissible one, and it frequently destroys value. In the
+portfolio above, the −45 bps cell converts at **7.87 %** and returns **€10.25 per exposed lead**; the
++90 bps cell converts at 4.04 % and returns **€21.65**. Same population, double the margin, on a
+decision that conversion rate gets backwards.
+
+GAAP therefore decides on risk-adjusted contribution, that is take-up × (rate − profitability
+floor) × principal × duration, and writes that trade-off into its rationale rather than hiding it. And every
+recommendation carries its own caveats: extrapolation beyond the envelope of tested prices,
+origination PD that is not realised loss, effect measured over the test window alone. A pricing
+recommendation delivered without its limits is an incomplete recommendation.
+
+---
+
 ### About the name
 
 Each letter carries a pillar of the system: **governance** refuses by default anything that is not
 admissible, **arbitrage** settles the volume-versus-margin trade-off, **audit** makes every decision
-and every assignment replayable — all applied to **price**. *Arbitrage* is used here in its French
+and every assignment replayable, all applied to **price**. *Arbitrage* is used here in its French
 sense of settling a trade-off, not in the Anglo-Saxon sense of riskless profit.
 
 The acronym is also a deliberate nod to *Generally Accepted Accounting Principles*, and it states the
-same intention: hold price to the standard accounting holds accounts to — rules fixed **before** the
+same intention: hold price to the standard accounting holds accounts to: rules fixed **before** the
 facts, an audit trail, and a reasoned opinion rather than a bare number.
 
 ---
@@ -73,7 +102,7 @@ facts, an audit trail, and a reasoned opinion rather than a bare number.
 | **Constraint** | Aesthetic. | Profitability floor, regulatory capital, prohibition on segmenting by protected characteristic. |
 
 This asymmetry is what GAAP encodes. A general-purpose A/B testing tool pointed at a price will
-regularly return the wrong answer — not for want of statistical rigour, but because it optimises the
+regularly return the wrong answer, not for want of statistical rigour, but because it optimises the
 wrong quantity.
 
 ---
@@ -83,11 +112,11 @@ wrong quantity.
 They coexist deliberately in the portfolio above, because these are the five a pricing
 experimentation engine has to handle and that most A/B testing tools handle badly:
 
-1. **A switch proven against conversion rate** — the cell that converts least is the one that earns
+1. **A switch proven against conversion rate.** The cell that converts least is the one that earns
    most.
-2. **A protective stop triggered early** — at only 39 % of planned information, one cell breaches the
+2. **A protective stop triggered early.** At only 39 % of planned information, one cell breaches the
    loss tolerance fixed before launch. GAAP cuts the cell, not the experiment.
-3. **A test with no economic effect despite a significant conversion gap** (z = −3.92) — concluding
+3. **A test with no economic effect despite a significant conversion gap** (z = −3.92). Concluding
    on conversion would have driven a decision that contribution does not support.
 4. **A plan refused before launch** by six blocking guardrails.
 5. **An invalidated test** through allocation breakage: the numbers look flattering, they are not
@@ -108,7 +137,7 @@ A pure function of the experiment salt and the subject identifier. Three direct 
 - **The customer sees the same price again.** No database lookup, no drift between two visits.
 - **Every past assignment is replayable.** Reconstructing the offer made to a customer eighteen
   months ago requires only the salt and the plan version, both anchored in the audit trail. No table
-  of hundreds of millions of rows to retain — therefore no second source of truth that can diverge
+  of hundreds of millions of rows to retain, therefore no second source of truth that can diverge
   from the first.
 - **Experiments are independent.** Because the salt is per-experiment, a subject is re-randomised
   from one test to the next.
@@ -123,7 +152,7 @@ flask replay pp-taeg-2026q3 CLI-8842910
 ```
 
 Two independent random streams (`holdout` and `cell`): mixing them would correlate the control
-holdout with price — a bias that shows up in no aggregate.
+holdout with price, a bias that shows up in no aggregate.
 
 ### 2. The profitability floor, before anything else
 
@@ -132,8 +161,8 @@ r_floor = f + o + PD × LGD + k × (h − f),    k = RW × target CET1 ratio
 ```
 
 Funding, operating costs, expected loss (Basel / IFRS 9) and capital charge. A cell placed below
-that threshold destroys shareholder value even when it is accounting-profitable — and GAAP **refuses
-to launch it**, rather than noting it afterwards.
+that threshold destroys shareholder value even when it is accounting-profitable, and GAAP **refuses
+to launch it** rather than noting it afterwards.
 
 The property that makes the model coherent: **at the floor price, RAROC equals the cost of equity
 exactly.** It is verified by the test suite, and it is what revealed that an early version wrongly
@@ -149,7 +178,7 @@ RAC = take-up × (r_effective − r_floor) × K × D
 
 Risk-adjusted contribution per exposed lead. This is the **only** metric on which GAAP permits a
 switch. In the screenshot above, the −45 bps cell converts at 7.87 % against 4.04 % for the +90 bps
-cell — and returns €10.25 against €21.65 per lead. GAAP decides on the second quantity, and writes
+cell, and returns €10.25 against €21.65 per lead. GAAP decides on the second quantity, and writes
 that trade-off into its rationale.
 
 Arrangement fees are converted into a rate equivalent (`fee / (K × D)`): both price levers live on
@@ -173,8 +202,8 @@ each carrying a stable code that reappears in the audit trail.
 | `STAT_HOLDOUT` | Preserved control holdout | Warning |
 | `PLAN_DURATION` | Duration bounded | Warning |
 
-In production, three more: the SRM check, the loss tolerance per lead — a pricing stop-loss fixed
-**before** seeing any result — and adverse-selection detection.
+In production, three more: the SRM check, the loss tolerance per lead (a pricing stop-loss fixed
+**before** seeing any result) and adverse-selection detection.
 
 A live plan is **frozen**: cells, weights and salt cannot be modified. Changing a plan mid-flight
 merges two different experiments into one dataset.
@@ -188,7 +217,7 @@ h_n = SHA-256( h_{n−1} ‖ timestamp ‖ actor ‖ event ‖ subject ‖ canon
 ```
 
 Append-only journal. Modifying or deleting an old entry invalidates every subsequent one, and
-verification names both the first broken rank **and** the nature of the break — chaining (an entry
+verification names both the first broken rank **and** the nature of the break: chaining (an entry
 disappeared) or digest (content was rewritten).
 
 This is not a blockchain and does not claim to be: no consensus, no third-party timestamping. It is
@@ -196,7 +225,7 @@ a journal that **cannot be falsified silently**, which is the property an intern
 actually needs.
 
 Logged: design, modification, approval, activation, guardrail refusal, suspension, decision issued,
-conclusion. Not logged: individual assignments — they are replayable, and logging them would create
+conclusion. Not logged: individual assignments, which are replayable. Logging them would create
 a second source of truth.
 
 ---
@@ -211,12 +240,12 @@ amounts to paying for information you will not obtain.
 The lab replays the plan a few hundred times under an assumed elasticity and answers three questions:
 
 - **Can this plan conclude?** In the screenshot: a 67 % chance of switching to the right cell, and a
-  25 % chance of switching to a sub-optimal one. That second figure is the more interesting — it
+  25 % chance of switching to a sub-optimal one. That second figure is the more interesting: it
   appears on no conventional experiment design.
 - **What does the learning cost?** The distribution, not just the mean. It is the P95 that has to be
   defended in committee.
 - **How precisely will elasticity be measured?** Interval coverage at 80 % instead of 95 % signals
-  intervals that lie — a worse defect than a lack of power.
+  intervals that lie, a worse defect than a lack of power.
 
 Fixed seed: two runs on the same assumptions produce the same result.
 
@@ -231,7 +260,7 @@ lost plan.
 
 > A lesson from the demonstration portfolio, and an instructive one: detecting **8 % relative** on a
 > 6 % take-up with four cells requires **52,000 leads per cell**. The realistic volumes in the
-> portfolio only support declaring a 15–18 % MDE. GAAP forces that to be written into the plan
+> portfolio only support declaring an MDE of 15 to 18 %. GAAP forces that to be written into the plan
 > rather than discovered in the results.
 
 ---
@@ -255,8 +284,8 @@ In production, serve through a WSGI server and set `GAAP_SECRET_KEY`:
 gunicorn "gaap:create_app('production')" --bind 0.0.0.0:8000 --workers 4
 ```
 
-Without `GAAP_SECRET_KEY`, the application starts with an ephemeral key **and says so in its logs** —
-a loud, therefore visible, default.
+Without `GAAP_SECRET_KEY`, the application starts with an ephemeral key **and says so in its logs**.
+A loud default, therefore a visible one.
 
 ### Command line
 
@@ -304,7 +333,7 @@ response from GAAP.
 
 ```
 gaap/
-├── domain/              pure Python — no dependency on Flask or on the database
+├── domain/              pure Python, no dependency on Flask or on the database
 │   ├── stats.py         distributions, intervals, tests, sizing, sequential, Bayesian
 │   ├── pricing.py       risk-adjusted floor, contribution, RAROC, Lerner rule
 │   ├── allocation.py    deterministic hash-based assignment
@@ -326,7 +355,7 @@ stack, and a pricing result must not depend on a BLAS version. The χ², Student
 distributions are implemented and checked against published reference values.
 
 **Charts are SVG rendered server-side.** No CDN, no inline script. That is what makes a strict
-Content Security Policy tenable — `default-src 'self'`, with no `unsafe-inline` and no exception —
+Content Security Policy tenable (`default-src 'self'`, with no `unsafe-inline` and no exception),
 enforced by a test that fails if a template reintroduces an inline style.
 
 **Measurement and decision are separated.** `analysis.analyse()` measures, `decision.recommend()`
@@ -339,7 +368,7 @@ honest way to compare two stopping rules.
 
 | Question | Method | Why this one |
 |---|---|---|
-| Interval on a take-up rate | Wilson score (1927) | Keeps nominal coverage at low rates — the regime of credit take-up |
+| Interval on a take-up rate | Wilson score (1927) | Keeps nominal coverage at low rates, the regime of credit take-up |
 | Gap between two take-up rates | Newcombe (1998), method 10 | Correct coverage when one arm is deliberately under-exposed |
 | Gap in contribution | Welch's *t* test | Variance depends on the cell's price: homoscedasticity is false by construction |
 | Multiple comparisons | Bonferroni | Without correction, family-wise error reaches 14 % for three variants |
@@ -352,9 +381,9 @@ Two points deserve emphasis because they are frequently done badly:
 
 **The sequential boundary applies to contribution, not conversion.** Protecting against peeking on
 the statistic you do not decide on makes no sense. The demonstration portfolio contains the case that
-proves it: a statistically significant take-up gap (z = −3.92) that is economically neutral —
-contribution interval [−1.76 ; +4.19] € per lead — where concluding on conversion would have driven a
-decision contribution does not support.
+proves it: a statistically significant take-up gap (z = −3.92) that is economically neutral,
+with a contribution interval of [−1.76 ; +4.19] € per lead. Concluding on conversion would have
+driven a decision contribution does not support.
 
 **The theoretical optimal price is bounded to the envelope of tested prices.** The Lerner rule
 `(p* − c)/p* = −1/e` extrapolates an elasticity estimated on a handful of steps to the whole curve.
@@ -362,7 +391,7 @@ GAAP computes that value, flags it as extrapolation when it falls outside the en
 to act on it alone. Leaving the envelope means replacing a measurement with a functional-form
 assumption.
 
-The full methodology note lives **inside the application** (`/methode`) — a method you have to go
+The full methodology note lives **inside the application** (`/methode`), because a method you have to go
 looking for elsewhere is not enforceable. A written version is in
 [`docs/METHODOLOGIE.md`](docs/METHODOLOGIE.md) (French).
 
@@ -373,13 +402,13 @@ looking for elsewhere is not enforceable. A written version is in
 This section matters as much as the previous ones, and every recommendation restates it:
 
 - **Competitor reaction** to a generalised price change.
-- The effect of price on **long-term customer value** — cross-holding, attrition, refinancing.
+- The effect of price on **long-term customer value**: cross-holding, attrition, refinancing.
 - **Seasonality** and novelty effects beyond the test window.
 - The behaviour of customers **excluded by a guardrail**, unobserved by construction.
 - **Realised loss**: only expected loss at origination enters the calculation. Any conclusion about
   risk mix must be confirmed on twelve-month cohorts.
 
-Adverse selection is *detected* — by comparing mean PD of accepted applications across cells — but
+Adverse selection is *detected*, by comparing mean PD of accepted applications across cells, but
 the PD used is the scoring model's at the time of offer. It anticipates loss; it does not observe it.
 
 ---
@@ -399,7 +428,7 @@ Statistical reference values come from published tables, not from an earlier run
 that compares code against itself verifies nothing.
 
 One test pins the assignment fingerprint of eight subjects. It fails if a change to the hashing
-displaces a subject — deliberately: changing the assignment function silently invalidates every
+displaces a subject. That is deliberate: changing the assignment function silently invalidates every
 running experiment, and must therefore be a conscious act.
 
 The screenshots in this document are regenerated by `python3 scripts/capture_screens.py`: a
@@ -410,7 +439,7 @@ hand-made screenshot becomes wrong at the first interface change, and nobody not
 ## Demonstration data
 
 **Every figure in the portfolio is synthetic.** No customer, no contract, no real exposure. The
-orders of magnitude — funding rate, PD, LGD, risk weight, take-up — are chosen to be plausible in a
+orders of magnitude (funding rate, PD, LGD, risk weight, take-up) are chosen to be plausible in a
 European consumer-credit market; they constitute neither a market reference nor a pricing
 recommendation.
 
@@ -422,11 +451,15 @@ term making acceptance depend on applicant risk as price departs from the refere
 ## References
 
 - Kohavi, Tang & Xu (2020), *Trustworthy Online Controlled Experiments*, Cambridge University Press
-- Wilson (1927), *JASA* 22(158) — score interval
-- Newcombe (1998), *Statistics in Medicine* 17(8) — difference between proportions
+- Wilson (1927), *JASA* 22(158): score interval
+- Newcombe (1998), *Statistics in Medicine* 17(8): difference between proportions
 - O'Brien & Fleming (1979), *Biometrics* 35(3); Lan & DeMets (1983), *Biometrika* 70(3)
 - Fleiss, Levin & Paik (2003), *Statistical Methods for Rates and Proportions*
 - Lerner (1934), *Review of Economic Studies* 1(3)
+- Working (1927), *Quarterly Journal of Economics* 41(2): "What do statistical demand curves show?",
+  the founding paper on the identification problem in demand estimation
+- Angrist & Pischke (2009), *Mostly Harmless Econometrics*, Princeton University Press: why random
+  assignment identifies a causal effect that observational data cannot
 - Basel Committee (2017), *Basel III: Finalising post-crisis reforms*; IFRS 9, *Financial Instruments*
 
 ---
@@ -435,7 +468,7 @@ term making acceptance depend on applicant risk as price departs from the refere
 
 **[DataOptimization.be](https://www.dataoptimization.be)**
 
-<sub>Data science consulting for financial services — pricing, price sensitivity,<br>
+<sub>Data science consulting for financial services: pricing, price sensitivity,<br>
 credit risk, analytical architecture.</sub>
 
 </div>

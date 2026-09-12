@@ -9,7 +9,7 @@
         ├─────────────────────────────────────────────────────────┤
 services│  cycle de vie gouverné · analyse · laboratoire · prix     │
         ├─────────────────────────────────────────────────────────┤
- domain │  Python pur — statistiques, économie, allocation,        │
+ domain │  Python pur : statistiques, économie, allocation,       │
         │  garde-fous, décision, entités                           │
         ├─────────────────────────────────────────────────────────┤
  infra  │  SQLite · dépôts · piste d'audit chaînée                 │
@@ -63,7 +63,7 @@ objet.
 
 `analysis.analyse()` mesure, `decision.recommend()` tranche. La politique de décision est une
 décision de l'établissement, pas une propriété des données. Les dissocier permet de rejouer une
-règle d'arrêt différente sur des mesures inchangées — la seule manière honnête de comparer deux
+règle d'arrêt différente sur des mesures inchangées, la seule manière honnête de comparer deux
 politiques sans réécrire l'histoire.
 
 ### Les graphiques sont générés côté serveur
@@ -85,7 +85,7 @@ audit_ledger (seq, recorded_at, actor, event, subject, payload, prev_hash, entry
 ```
 
 La contrainte d'unicité `(experiment_key, subject_id)` matérialise l'unicité de l'affectation : un
-même client ne peut pas être compté deux fois dans un même test — première source de gonflement
+même client ne peut pas être compté deux fois dans un même test, première source de gonflement
 artificiel d'un résultat d'expérimentation.
 
 `audit_ledger` est en ajout seul : l'application n'émet ni `UPDATE` ni `DELETE` dessus.
@@ -97,7 +97,7 @@ SQLite est un choix assumé pour ce moteur : quelques milliers de lignes agrég�
 sans rien coûter en capacité.
 
 Le passage à PostgreSQL se limite à réécrire `infrastructure/db.py` et les requêtes de
-`infrastructure/repositories.py` — le domaine et les services n'en savent rien.
+`infrastructure/repositories.py`. Le domaine et les services n'en savent rien.
 
 Le point chaud réel n'est pas la base mais `/api/v1/assign`, sur le chemin critique d'une demande de
 crédit. Il ne fait qu'une lecture de plan et un calcul de hachage, sans écriture obligatoire :
@@ -116,5 +116,5 @@ n'empêche jamais de servir un prix.
 
 GAAP est conçu pour être placé **derrière** le dispositif d'authentification de l'établissement, pas
 pour le remplacer : l'en-tête `X-GAAP-Actor` fait foi pour l'identité de l'appelant. Le point est
-explicite dans `api/routes.py` plutôt que sous-entendu — une piste d'audit n'a de valeur que si
+explicite dans `api/routes.py` plutôt que sous-entendu : une piste d'audit n'a de valeur que si
 l'acteur est nommé.

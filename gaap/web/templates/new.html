@@ -3,7 +3,7 @@
 {% block heading %}Concevoir un plan tarifaire{% endblock %}
 {% block lede %}
   Le plan est enregistre en brouillon. Il devra franchir les garde-fous et la validation d'un
-  second intervenant avant toute mise en production — un test de prix modifie le produit vendu.
+  second intervenant avant toute mise en production : un test de prix modifie le produit vendu.
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
           </div>
           <div class="field">
             <label for="name">Intitule</label>
-            <input id="name" name="name" required placeholder="Pret personnel — echelle de TAEG">
+            <input id="name" name="name" required placeholder="Pret personnel, echelle de TAEG">
           </div>
           <div class="field">
             <label for="product">Produit</label>
@@ -122,12 +122,12 @@
         <div id="power-readout"
              data-endpoint="{{ url_for('api.post_power') }}"
              data-fallback="Activez JavaScript pour le calcul en direct, ou consultez la note de methode.">
-          <div class="line"><span>Comparaisons</span><span class="v" data-field="comparisons">—</span></div>
-          <div class="line"><span>alpha corrige</span><span class="v" data-field="alpha_adjusted">—</span></div>
-          <div class="line"><span>Requis par cellule</span><span class="v" data-field="required_per_cell">—</span></div>
-          <div class="line"><span>Disponible par cellule</span><span class="v" data-field="available_per_cell">—</span></div>
-          <div class="line"><span>Effet detectable</span><span class="v" data-field="detectable_effect">—</span></div>
-          <div class="line"><span>Verdict</span><span class="v" data-field="verdict">—</span></div>
+          <div class="line"><span>Comparaisons</span><span class="v" data-field="comparisons">n/a</span></div>
+          <div class="line"><span>alpha corrige</span><span class="v" data-field="alpha_adjusted">n/a</span></div>
+          <div class="line"><span>Requis par cellule</span><span class="v" data-field="required_per_cell">n/a</span></div>
+          <div class="line"><span>Disponible par cellule</span><span class="v" data-field="available_per_cell">n/a</span></div>
+          <div class="line"><span>Effet detectable</span><span class="v" data-field="detectable_effect">n/a</span></div>
+          <div class="line"><span>Verdict</span><span class="v" data-field="verdict">n/a</span></div>
         </div>
         <p class="caption">
           Un plan sous-dimensionne consomme de la marge sans produire d'information exploitable.
