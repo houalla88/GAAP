@@ -2,237 +2,241 @@
 
 # GAAP
 
-**G**ouvernance, **A**rbitrage et **A**udit du **P**rix
+**G**overnance · **A**rbitrage · **A**udit · **P**rice
 
-*Le prix se teste comme le reste. Il ne se décide pas comme le reste.*
+*Price can be tested like anything else. It cannot be decided like anything else.*
 
-[![Tests](https://img.shields.io/badge/tests-162%20passants-09806c)](tests/)
+[![Tests](https://img.shields.io/badge/tests-162%20passing-09806c)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-09806c)](pyproject.toml)
-[![Dépendances](https://img.shields.io/badge/moteur-stdlib%20uniquement-5439b4)](gaap/domain/)
+[![Dependencies](https://img.shields.io/badge/engine-stdlib%20only-5439b4)](gaap/domain/)
 [![Licence](https://img.shields.io/badge/licence-MIT-525a6b)](LICENSE)
+
+<sub>**English** · [Français](README.fr.md)</sub>
 
 </div>
 
 ---
 
-## Le prix qui convertit le mieux est presque toujours celui qui détruit le plus de valeur
+## The price that converts best is almost always the one that destroys the most value
 
-C'est toute la raison d'être de ce moteur.
+That single sentence is the reason this engine exists.
 
-Branchez un outil d'A/B testing classique sur un tarif : il désignera la cellule la moins chère.
-Elle convertit mieux — c'est mécanique. Sur le jeu de démonstration ci-dessous, cette cellule
-convertit à **7,87 %** et rapporte **10,25 € par lead exposé**. Celle qui convertit deux fois moins,
-à 4,04 %, en rapporte **21,65 €**. L'écart n'est pas un détail d'optimisation : c'est un doublement
-de la marge, sur la même population, pour une décision que le taux de conversion prend à l'envers.
+Point a conventional A/B testing tool at a tariff and it will pick the cheapest cell. It converts
+better — mechanically. In the demonstration portfolio below, that cell converts at **7.87 %** and
+returns **€10.25 per exposed lead**. The cell that converts half as often, at 4.04 %, returns
+**€21.65**. This is not an optimisation detail: it is a doubling of margin, on the same population,
+on a decision that conversion rate gets backwards.
 
-**GAAP tranche sur la contribution ajustée du risque, et sait expliquer pourquoi.** Derrière cette
-phrase : un plancher de rentabilité reconstitué poste par poste (refinancement, coûts opérationnels,
-PD × LGD, charge en capital réglementaire), une frontière d'arrêt séquentielle O'Brien-Fleming posée
-sur la marge et non sur la conversion, une détection d'anti-sélection — parce qu'un prix qui monte
-sélectionne les demandeurs qui ont le moins d'alternatives — et une piste d'audit scellée par
-chaînage d'empreintes. Le moteur statistique n'utilise aucune dépendance numérique : les lois du χ²,
-de Student et la normale inverse y sont implémentées et vérifiées contre des valeurs publiées, pour
-qu'un contrôle interne puisse relire la formule appliquée.
+**GAAP decides on risk-adjusted contribution, and can explain why.** Behind that sentence: a
+profitability floor rebuilt component by component (funding, operating costs, PD × LGD, regulatory
+capital charge), an O'Brien-Fleming sequential stopping boundary placed on margin rather than on
+conversion, adverse-selection detection — because a rising price selects the applicants with the
+fewest alternatives — and a hash-chained audit trail. The statistical engine carries no numerical
+dependency: the χ², Student and inverse-normal distributions are implemented in it and checked
+against published reference values, so that an internal control function can read the formula that
+was actually applied.
 
-Et chaque recommandation qu'il produit porte ses réserves : extrapolation hors de l'enveloppe des
-prix testés, PD d'octroi qui n'est pas la perte constatée, effet mesuré sur la seule fenêtre du
-test. Une recommandation tarifaire livrée sans ses limites est une recommandation incomplète.
+And every recommendation it issues carries its own caveats: extrapolation beyond the envelope of
+tested prices, origination PD that is not realised loss, effect measured over the test window alone.
+A pricing recommendation delivered without its limits is an incomplete recommendation.
 
-![Cockpit GAAP](docs/assets/01-cockpit.png)
+![GAAP cockpit](docs/assets/01-cockpit.png)
 
-<div align="center"><sub>Le cockpit : le portefeuille d'expériences, trié par ce qui appelle une décision.</sub></div>
+<div align="center"><sub>The cockpit: the experiment portfolio, sorted by what needs a decision.</sub></div>
 
----
-
-### Le nom
-
-Chaque lettre porte un pilier du système : la **gouvernance** refuse par défaut ce qui n'est pas
-admissible, l'**arbitrage** tranche le compromis volume / marge, l'**audit** rend chaque décision et
-chaque affectation rejouables — le tout appliqué au **prix**.
-
-L'acronyme est aussi un clin d'œil assumé aux *Generally Accepted Accounting Principles*, et il dit
-la même intention : appliquer au prix l'exigence que la comptabilité applique aux comptes — des
-règles fixées **avant** les faits, une piste d'audit, et une opinion motivée plutôt qu'un chiffre nu.
+> The interface ships in French. It was built for a Belgian consumer-credit context, and the
+> screenshots are the real application, not mock-ups.
 
 ---
 
-## Pourquoi un test de prix n'est pas un test de bouton
+### About the name
 
-| | Test visuel | Test tarifaire |
+Each letter carries a pillar of the system: **governance** refuses by default anything that is not
+admissible, **arbitrage** settles the volume-versus-margin trade-off, **audit** makes every decision
+and every assignment replayable — all applied to **price**. *Arbitrage* is used here in its French
+sense of settling a trade-off, not in the Anglo-Saxon sense of riskless profit.
+
+The acronym is also a deliberate nod to *Generally Accepted Accounting Principles*, and it states the
+same intention: hold price to the standard accounting holds accounts to — rules fixed **before** the
+facts, an audit trail, and a reasoned opinion rather than a bare number.
+
+---
+
+## Why a price test is not a button test
+
+| | Visual test | Price test |
 |---|---|---|
-| **Réversibilité** | Un retour arrière annule tout. | Les contrats signés portent le prix testé pendant toute leur durée de vie. |
-| **Coût pendant le test** | Marginal. | Chaque cellule sous-tarifée consomme de la marge en temps réel. |
-| **Métrique** | Le taux de conversion suffit. | Le prix qui convertit le mieux est le plus bas admissible. Il détruit souvent de la valeur. |
-| **Population** | Stable. | Le prix **sélectionne** les demandeurs : baisser attire les bons risques, monter attire les mauvais. |
-| **Contrainte** | Esthétique. | Plancher de rentabilité, capital réglementaire, interdiction de segmenter sur un critère protégé. |
+| **Reversibility** | Rolling back undoes everything. | Signed contracts carry the tested price for their entire lifetime. |
+| **Cost while running** | Marginal. | Every under-priced cell burns margin in real time. |
+| **Metric** | Conversion rate is enough. | The best-converting price is the lowest admissible one. It frequently destroys value. |
+| **Population** | Stable. | Price **selects** applicants: lowering attracts good risks, raising attracts bad ones. |
+| **Constraint** | Aesthetic. | Profitability floor, regulatory capital, prohibition on segmenting by protected characteristic. |
 
-C'est cette asymétrie que GAAP encode. Un outil d'A/B testing généraliste branché sur un prix
-donnera régulièrement la mauvaise réponse — non par défaut de rigueur statistique, mais parce qu'il
-optimise la mauvaise grandeur.
-
----
-
-## Les cinq situations du jeu de démonstration
-
-Elles coexistent volontairement dans le portefeuille ci-dessus, parce que ce sont les cinq qu'un
-moteur d'expérimentation tarifaire doit savoir traiter et que la plupart des outils d'A/B testing
-traitent mal :
-
-1. **Une bascule prouvée contre le taux de conversion** — la cellule qui convertit le moins est
-   celle qui rapporte le plus.
-2. **Un arrêt de protection déclenché avant terme** — à 39 % d'information seulement, une cellule
-   dépasse la tolérance de perte fixée avant le lancement. GAAP coupe la cellule, pas l'expérience.
-3. **Un test sans effet économique malgré un écart de conversion significatif** (z = −3,92) —
-   conclure sur la conversion aurait conduit à une décision que la contribution ne justifie pas.
-4. **Un plan refusé avant lancement** par six garde-fous bloquants.
-5. **Un test invalidé** par rupture d'allocation : les chiffres sont flatteurs, ils ne sont pas
-   lisibles.
+This asymmetry is what GAAP encodes. A general-purpose A/B testing tool pointed at a price will
+regularly return the wrong answer — not for want of statistical rigour, but because it optimises the
+wrong quantity.
 
 ---
 
-## Les cinq piliers
+## The five situations in the demonstration portfolio
 
-### 1. L'affectation est calculée, jamais stockée
+They coexist deliberately in the portfolio above, because these are the five a pricing
+experimentation engine has to handle and that most A/B testing tools handle badly:
+
+1. **A switch proven against conversion rate** — the cell that converts least is the one that earns
+   most.
+2. **A protective stop triggered early** — at only 39 % of planned information, one cell breaches the
+   loss tolerance fixed before launch. GAAP cuts the cell, not the experiment.
+3. **A test with no economic effect despite a significant conversion gap** (z = −3.92) — concluding
+   on conversion would have driven a decision that contribution does not support.
+4. **A plan refused before launch** by six blocking guardrails.
+5. **An invalidated test** through allocation breakage: the numbers look flattering, they are not
+   readable.
+
+---
+
+## The five pillars
+
+### 1. Assignment is computed, never stored
 
 ```
-u = uint64( SHA-256( sel ‖ espace ‖ identifiant )[0:8] ) / 2⁶⁴
+u = uint64( SHA-256( salt ‖ namespace ‖ subject_id )[0:8] ) / 2⁶⁴
 ```
 
-Une fonction pure du sel de l'expérience et de l'identifiant du sujet. Trois conséquences directes :
+A pure function of the experiment salt and the subject identifier. Three direct consequences:
 
-- **Le client revoit le même prix.** Pas de consultation de base, pas de dérive entre deux visites.
-- **Toute affectation passée est rejouable.** Reconstituer l'offre faite à un client il y a dix-huit
-  mois ne demande que le sel et la version du plan, tous deux ancrés dans la piste d'audit. Aucune
-  table de plusieurs centaines de millions de lignes à conserver — donc aucune seconde vérité
-  susceptible de diverger de la première.
-- **Les expériences sont indépendantes.** Le sel étant propre à chaque test, un sujet est
-  re-randomisé de l'un à l'autre.
+- **The customer sees the same price again.** No database lookup, no drift between two visits.
+- **Every past assignment is replayable.** Reconstructing the offer made to a customer eighteen
+  months ago requires only the salt and the plan version, both anchored in the audit trail. No table
+  of hundreds of millions of rows to retain — therefore no second source of truth that can diverge
+  from the first.
+- **Experiments are independent.** Because the salt is per-experiment, a subject is re-randomised
+  from one test to the next.
 
 ```bash
 flask replay pp-taeg-2026q3 CLI-8842910
-# Expérience : pp-taeg-2026q3 (Prêt personnel 12 500 EUR - échelle de TAEG)
-# Sel        : pp-taeg-2026q3-0f4c9a
-# Tirage     : 0.467401937101
-# Cellule    : m45 - Affecté
-# Prix servi : 6,45 %
+# Experiment : pp-taeg-2026q3 (Personal loan €12,500 - APR ladder)
+# Salt       : pp-taeg-2026q3-0f4c9a
+# Draw       : 0.467401937101
+# Cell       : m45 - Assigned
+# Price      : 6.45 %
 ```
 
-Deux flux aléatoires indépendants (`holdout` et `cell`) : mélanger les deux corrélerait le groupe
-témoin au prix — un biais qui n'apparaît dans aucun total.
+Two independent random streams (`holdout` and `cell`): mixing them would correlate the control
+holdout with price — a bias that shows up in no aggregate.
 
-### 2. Le plancher de rentabilité, avant tout le reste
-
-```
-r_plancher = f + o + PD × LGD + k × (h − f),    k = RW × ratio CET1
-```
-
-Refinancement, coûts opérationnels, perte attendue (Bâle / IFRS 9) et charge en capital. Une cellule
-positionnée sous ce seuil détruit de la valeur actionnariale même si elle est comptablement
-profitable — et GAAP **refuse de la lancer**, plutôt que de le constater après coup.
-
-La propriété qui rend le modèle cohérent : **au prix plancher, le RAROC vaut exactement le coût des
-fonds propres.** Elle est vérifiée par la suite de tests, et c'est elle qui a révélé qu'une première
-version facturait à tort le refinancement sur la part d'encours financée par fonds propres.
-
-![Fiche d'expérience](docs/assets/02-experience-verdict.png)
-
-### 3. La décision porte sur la contribution, pas sur la conversion
+### 2. The profitability floor, before anything else
 
 ```
-RAC = take-up × (r_effectif − r_plancher) × K × D
+r_floor = f + o + PD × LGD + k × (h − f),    k = RW × target CET1 ratio
 ```
 
-Contribution ajustée du risque par lead exposé. C'est la **seule** métrique sur laquelle GAAP
-autorise une bascule. Sur la capture ci-dessus, la cellule à −45 bps convertit à 7,87 % contre
-4,04 % pour la cellule à +90 bps — et rapporte 10,25 € contre 21,65 € par lead. GAAP tranche sur la
-seconde grandeur, et l'écrit dans sa motivation.
+Funding, operating costs, expected loss (Basel / IFRS 9) and capital charge. A cell placed below
+that threshold destroys shareholder value even when it is accounting-profitable — and GAAP **refuses
+to launch it**, rather than noting it afterwards.
 
-Les frais de dossier sont convertis en équivalent-taux (`frais / (K × D)`) : les deux leviers de
-prix vivent sur la même échelle, parce qu'ils touchent la même poche du client.
+The property that makes the model coherent: **at the floor price, RAROC equals the cost of equity
+exactly.** It is verified by the test suite, and it is what revealed that an early version wrongly
+charged funding on the equity-funded portion of the exposure.
 
-### 4. Les garde-fous refusent par défaut
+![Experiment detail](docs/assets/02-experience-verdict.png)
 
-Une expérience est **refusée jusqu'à preuve du contraire**. Huit contrôles avant lancement, cinq en
-production, chacun portant un code stable repris dans la piste d'audit.
+### 3. The decision is made on contribution, not conversion
 
-![Plan refusé par les garde-fous](docs/assets/03-garde-fous-refus.png)
+```
+RAC = take-up × (r_effective − r_floor) × K × D
+```
 
-| Code | Contrôle | Sévérité |
+Risk-adjusted contribution per exposed lead. This is the **only** metric on which GAAP permits a
+switch. In the screenshot above, the −45 bps cell converts at 7.87 % against 4.04 % for the +90 bps
+cell — and returns €10.25 against €21.65 per lead. GAAP decides on the second quantity, and writes
+that trade-off into its rationale.
+
+Arrangement fees are converted into a rate equivalent (`fee / (K × D)`): both price levers live on
+the same scale, because they reach the same customer pocket.
+
+### 4. Guardrails refuse by default
+
+An experiment is **refused until proven admissible**. Eight pre-launch checks, five in production,
+each carrying a stable code that reappears in the audit trail.
+
+![Plan refused by guardrails](docs/assets/03-garde-fous-refus.png)
+
+| Code | Check | Severity |
 |---|---|---|
-| `ECO_FLOOR` | Aucune cellule sous le plancher de rentabilité | Bloquant |
-| `ECO_BAND` | Amplitude tarifaire dans la bande autorisée | Bloquant |
-| `RISK_EXPOSURE` | Part du trafic exposée plafonnée | Bloquant |
-| `COMP_PROTECTED` | Aucun ciblage adossé à un critère de discrimination prohibé | Bloquant |
-| `GOV_FOUR_EYES` | Le concepteur du plan ne le valide pas lui-même | Bloquant |
-| `STAT_POWER` | Volume suffisant pour détecter l'effet déclaré | Bloquant sous 50 % du requis, avertissement au-delà |
-| `STAT_HOLDOUT` | Groupe témoin préservé | Avertissement |
-| `PLAN_DURATION` | Durée bornée | Avertissement |
+| `ECO_FLOOR` | No cell below the profitability floor | Blocking |
+| `ECO_BAND` | Price amplitude within the authorised band | Blocking |
+| `RISK_EXPOSURE` | Share of traffic exposed is capped | Blocking |
+| `COMP_PROTECTED` | No targeting rule based on a prohibited discrimination criterion | Blocking |
+| `GOV_FOUR_EYES` | The plan's author does not approve their own plan | Blocking |
+| `STAT_POWER` | Volume sufficient to detect the declared effect | Blocking below 50 % of required, warning above |
+| `STAT_HOLDOUT` | Preserved control holdout | Warning |
+| `PLAN_DURATION` | Duration bounded | Warning |
 
-En production s'ajoutent le contrôle SRM, la tolérance de perte par lead — un *stop-loss* tarifaire
-fixé **avant** de voir les résultats — et la détection d'anti-sélection.
+In production, three more: the SRM check, the loss tolerance per lead — a pricing stop-loss fixed
+**before** seeing any result — and adverse-selection detection.
 
-Un plan en production est **figé** : ni les cellules, ni les poids, ni le sel ne sont modifiables.
-Modifier un plan en cours mélange deux expériences dans un même jeu de données.
+A live plan is **frozen**: cells, weights and salt cannot be modified. Changing a plan mid-flight
+merges two different experiments into one dataset.
 
-### 5. Tout est scellé
+### 5. Everything is sealed
 
-![Piste d'audit](docs/assets/05-piste-audit.png)
+![Audit trail](docs/assets/05-piste-audit.png)
 
 ```
-h_n = SHA-256( h_{n−1} ‖ horodatage ‖ acteur ‖ événement ‖ sujet ‖ contenu canonique )
+h_n = SHA-256( h_{n−1} ‖ timestamp ‖ actor ‖ event ‖ subject ‖ canonical payload )
 ```
 
-Journal en ajout seul. Modifier ou supprimer une entrée ancienne invalide toutes les suivantes, et
-la vérification nomme le premier rang rompu **et** la nature de la rupture — chaînage (une entrée a
-disparu) ou empreinte (un contenu a été réécrit).
+Append-only journal. Modifying or deleting an old entry invalidates every subsequent one, and
+verification names both the first broken rank **and** the nature of the break — chaining (an entry
+disappeared) or digest (content was rewritten).
 
-Ce n'est pas une blockchain et ne prétend pas l'être : ni consensus, ni horodatage tiers. C'est un
-journal **infalsifiable en silence**, ce qui est la propriété réellement utile pour un contrôle
-interne.
+This is not a blockchain and does not claim to be: no consensus, no third-party timestamping. It is
+a journal that **cannot be falsified silently**, which is the property an internal control function
+actually needs.
 
-Ce qui est journalisé : conception, modification, validation, activation, refus par garde-fou,
-suspension, décision rendue, conclusion. Ce qui ne l'est pas : les affectations individuelles —
-elles sont rejouables, les journaliser créerait une seconde vérité.
-
----
-
-## Le laboratoire : payer l'information ou ne pas la payer
-
-![Laboratoire GAAP](docs/assets/04-laboratoire.png)
-
-Un test tarifaire consomme de la marge pendant qu'il tourne. Le lancer sans savoir s'il peut
-conclure revient à payer une information qu'on n'obtiendra pas.
-
-Le laboratoire rejoue le plan quelques centaines de fois sous une élasticité supposée et répond à
-trois questions :
-
-- **Ce plan peut-il conclure ?** Sur la capture : 67 % de chances de basculer sur la bonne cellule,
-  et 25 % de basculer sur une cellule sous-optimale. Ce second chiffre est le plus intéressant — il
-  ne figure sur aucun plan d'expérience classique.
-- **Combien coûte l'apprentissage ?** La distribution, pas seulement la moyenne. C'est le P95 qui se
-  défend en comité.
-- **Avec quelle précision mesurera-t-on l'élasticité ?** Une couverture d'intervalle à 80 % au lieu
-  de 95 % signale des intervalles qui mentent — défaut plus grave qu'un manque de puissance.
-
-Graine fixée : deux exécutions sur les mêmes hypothèses donnent le même résultat.
+Logged: design, modification, approval, activation, guardrail refusal, suspension, decision issued,
+conclusion. Not logged: individual assignments — they are replayable, and logging them would create
+a second source of truth.
 
 ---
 
-## Concevoir un plan
+## The lab: pay for the information, or don't
 
-![Nouveau plan](docs/assets/06-nouveau-plan.png)
+![GAAP lab](docs/assets/04-laboratoire.png)
 
-Le dimensionnement se recalcule pendant la saisie. Un plan sous-dimensionné découvert trois semaines
-après le lancement est un plan perdu.
+A price test burns margin while it runs. Launching one without knowing whether it can conclude
+amounts to paying for information you will not obtain.
 
-> Enseignement du jeu de démonstration, et il est instructif : détecter **8 % relatif** sur un
-> take-up de 6 % avec quatre cellules demande **52 000 leads par cellule**. Les volumes réalistes du
-> portefeuille ne permettent de déclarer qu'un MDE de 15 à 18 %. GAAP force à l'écrire dans le plan
-> plutôt qu'à le découvrir dans les résultats.
+The lab replays the plan a few hundred times under an assumed elasticity and answers three questions:
+
+- **Can this plan conclude?** In the screenshot: a 67 % chance of switching to the right cell, and a
+  25 % chance of switching to a sub-optimal one. That second figure is the more interesting — it
+  appears on no conventional experiment design.
+- **What does the learning cost?** The distribution, not just the mean. It is the P95 that has to be
+  defended in committee.
+- **How precisely will elasticity be measured?** Interval coverage at 80 % instead of 95 % signals
+  intervals that lie — a worse defect than a lack of power.
+
+Fixed seed: two runs on the same assumptions produce the same result.
 
 ---
 
-## Démarrage
+## Designing a plan
+
+![New plan](docs/assets/06-nouveau-plan.png)
+
+Sizing is recomputed as you type. An under-powered plan discovered three weeks after launch is a
+lost plan.
+
+> A lesson from the demonstration portfolio, and an instructive one: detecting **8 % relative** on a
+> 6 % take-up with four cells requires **52,000 leads per cell**. The realistic volumes in the
+> portfolio only support declaring a 15–18 % MDE. GAAP forces that to be written into the plan
+> rather than discovered in the results.
+
+---
+
+## Getting started
 
 ```bash
 pip install -r requirements.txt
@@ -241,44 +245,44 @@ export FLASK_APP=gaap
 export GAAP_DATABASE=instance/gaap.sqlite
 
 flask init-db
-flask seed --reset        # portefeuille de démonstration, données 100 % synthétiques
+flask seed --reset        # demonstration portfolio, 100 % synthetic data
 python run.py             # http://127.0.0.1:5000
 ```
 
-En production, servir par un serveur WSGI et définir `GAAP_SECRET_KEY` :
+In production, serve through a WSGI server and set `GAAP_SECRET_KEY`:
 
 ```bash
 gunicorn "gaap:create_app('production')" --bind 0.0.0.0:8000 --workers 4
 ```
 
-Sans `GAAP_SECRET_KEY`, l'application démarre avec une clé éphémère **et le signale dans ses
-journaux** — défaut bruyant, donc visible.
+Without `GAAP_SECRET_KEY`, the application starts with an ephemeral key **and says so in its logs** —
+a loud, therefore visible, default.
 
-### Ligne de commande
+### Command line
 
 ```bash
-flask report pp-taeg-2026q3           # lecture complète d'une expérience en console
-flask replay pp-taeg-2026q3 CLI-4821  # quel prix a été servi à ce client, et pourquoi
-flask verify-ledger                   # recalcule la chaîne d'empreintes (code de sortie 1 si rompue)
+flask report pp-taeg-2026q3           # full read-out of an experiment in the console
+flask replay pp-taeg-2026q3 CLI-4821  # which price this customer was served, and why
+flask verify-ledger                   # recompute the hash chain (exit code 1 if broken)
 ```
 
-Le même moteur est accessible par l'interface, l'API et la ligne de commande : un contrôleur peut
-vérifier la piste d'audit sans dépendre du bon fonctionnement de l'application web.
+The same engine is reachable through the interface, the API and the command line: a control function
+can verify the audit trail without depending on the web application working.
 
 ---
 
 ## API
 
-L'interface web ne consomme rien d'autre que ces routes. Ce qui est affiché est exportable, et
-aucune divergence n'est possible entre ce que voit un analyste et ce qu'extrait un contrôleur.
+The web interface consumes nothing but these routes. What is displayed is exportable, and no
+divergence is possible between what an analyst sees and what an auditor extracts.
 
-| Route | Usage |
+| Route | Purpose |
 |---|---|
-| `POST /api/v1/assign` | **Chemin critique.** Affecte un sujet et retourne le prix à servir. |
-| `POST /api/v1/observations` | Enregistre l'issue commerciale d'un lead exposé. |
-| `GET /api/v1/experiments/<clé>/report` | Rapport complet : cellules, tests, élasticité, garde-fous, recommandation. |
-| `POST /api/v1/design/power` | Dimensionnement : taille requise et effet détectable. |
-| `GET /api/v1/ledger/verify` | Vérification de la chaîne d'empreintes. |
+| `POST /api/v1/assign` | **Critical path.** Assigns a subject and returns the price to serve. |
+| `POST /api/v1/observations` | Records the commercial outcome of an exposed lead. |
+| `GET /api/v1/experiments/<key>/report` | Full report: cells, tests, elasticity, guardrails, recommendation. |
+| `POST /api/v1/design/power` | Sizing: required sample size and detectable effect. |
+| `GET /api/v1/ledger/verify` | Hash-chain verification. |
 
 ```bash
 curl -s -X POST localhost:5000/api/v1/assign \
@@ -290,9 +294,9 @@ curl -s -X POST localhost:5000/api/v1/assign \
  "bucket": 0.467401937101, "in_analysis": true, "reason": ""}
 ```
 
-`/assign` **retourne toujours un prix.** Expérience inactive, sujet hors périmètre, segment exclu :
-c'est le prix de référence qui est servi, avec le motif. Un moteur de tarification ne doit jamais
-avoir à gérer une absence de réponse de GAAP.
+`/assign` **always returns a price.** Inactive experiment, subject out of scope, excluded segment:
+the reference price is served, with the reason. A pricing engine must never have to handle a missing
+response from GAAP.
 
 ---
 
@@ -300,84 +304,83 @@ avoir à gérer une absence de réponse de GAAP.
 
 ```
 gaap/
-├── domain/              Python pur — aucune dépendance à Flask ni à la base
-│   ├── stats.py         lois, intervalles, tests, dimensionnement, séquentiel, bayésien
-│   ├── pricing.py       plancher ajusté du risque, contribution, RAROC, règle de Lerner
-│   ├── allocation.py    affectation déterministe par hachage
-│   ├── analysis.py      lecture d'une expérience : SRM → take-up → contribution → élasticité
-│   ├── guardrails.py    ce que le moteur refuse, avant et pendant
-│   ├── decision.py      politique de décision (séparée de la mesure, à dessein)
-│   └── models.py        entités immuables
-├── infrastructure/      SQLite, dépôts, piste d'audit chaînée
-├── services/            cycle de vie gouverné, analyse, laboratoire, affectation
-├── api/                 blueprint REST
-└── web/                 vues, gabarits, graphiques SVG générés côté serveur
+├── domain/              pure Python — no dependency on Flask or on the database
+│   ├── stats.py         distributions, intervals, tests, sizing, sequential, Bayesian
+│   ├── pricing.py       risk-adjusted floor, contribution, RAROC, Lerner rule
+│   ├── allocation.py    deterministic hash-based assignment
+│   ├── analysis.py      reading an experiment: SRM → take-up → contribution → elasticity
+│   ├── guardrails.py    what the engine refuses, before and during
+│   ├── decision.py      decision policy (deliberately separate from measurement)
+│   └── models.py        immutable entities
+├── infrastructure/      SQLite, repositories, hash-chained audit trail
+├── services/            governed lifecycle, analysis, lab, assignment
+├── api/                 REST blueprint
+└── web/                 views, templates, server-rendered SVG charts
 ```
 
-Deux décisions structurantes méritent d'être défendues :
+Three structural decisions worth defending:
 
-**Le moteur n'utilise que la bibliothèque standard.** Ni numpy, ni scipy, ni pandas. Un contrôle
-interne doit pouvoir relire la formule appliquée sans traverser une pile numérique compilée, et un
-résultat de tarification ne doit pas dépendre d'une version de BLAS. Les lois du χ², de Student et
-la normale inverse sont implémentées et vérifiées contre des valeurs de référence publiées.
+**The engine uses the standard library only.** No numpy, no scipy, no pandas. An internal control
+function has to be able to read the formula that was applied without traversing a compiled numerical
+stack, and a pricing result must not depend on a BLAS version. The χ², Student and inverse-normal
+distributions are implemented and checked against published reference values.
 
-**Les graphiques sont des SVG générés côté serveur.** Aucun CDN, aucun script en ligne. C'est ce qui
-rend tenable une politique de sécurité de contenu stricte — `default-src 'self'`, sans
-`unsafe-inline` ni exception — vérifiée par un test qui échoue si un gabarit réintroduit un style en
-ligne.
+**Charts are SVG rendered server-side.** No CDN, no inline script. That is what makes a strict
+Content Security Policy tenable — `default-src 'self'`, with no `unsafe-inline` and no exception —
+enforced by a test that fails if a template reintroduces an inline style.
 
-**Mesure et décision sont séparées.** `analysis.analyse()` mesure, `decision.recommend()` tranche.
-C'est ce qui permet de rejouer une politique de décision différente sur des mesures inchangées : la
-seule manière honnête de comparer deux règles d'arrêt.
+**Measurement and decision are separated.** `analysis.analyse()` measures, `decision.recommend()`
+rules. This allows a different decision policy to be replayed on unchanged measurements: the only
+honest way to compare two stopping rules.
 
 ---
 
-## Méthode statistique
+## Statistical method
 
-| Question | Méthode | Pourquoi celle-là |
+| Question | Method | Why this one |
 |---|---|---|
-| Intervalle sur un take-up | Score de Wilson (1927) | Conserve sa couverture aux faibles taux — le régime d'un take-up de crédit |
-| Écart entre deux take-up | Newcombe (1998), méthode 10 | Couverture correcte quand un bras est volontairement peu exposé |
-| Écart de contribution | Test *t* de Welch | La variance dépend du prix de la cellule : l'homoscédasticité est fausse par construction |
-| Comparaisons multiples | Bonferroni | Sans correction, le risque familial atteint 14 % pour trois variantes |
-| Intégrité de l'allocation | χ² d'adéquation, seuil p < 0,001 | Un échec invalide tout, quelle que soit l'apparence des chiffres |
-| Arrêt anticipé | O'Brien-Fleming (Lan-DeMets) | Règle écrite avant le test, opposable, qui protège du *peeking* |
-| Lecture bayésienne | Posteriors Beta sur la **contribution** | Répond à « quelle probabilité de me tromper en basculant ? » |
-| Élasticité | Régression log-log pondérée | Poids = inverse de la variance de `ln p` par la méthode delta |
+| Interval on a take-up rate | Wilson score (1927) | Keeps nominal coverage at low rates — the regime of credit take-up |
+| Gap between two take-up rates | Newcombe (1998), method 10 | Correct coverage when one arm is deliberately under-exposed |
+| Gap in contribution | Welch's *t* test | Variance depends on the cell's price: homoscedasticity is false by construction |
+| Multiple comparisons | Bonferroni | Without correction, family-wise error reaches 14 % for three variants |
+| Allocation integrity | χ² goodness-of-fit, p < 0.001 | A failure invalidates everything, however good the numbers look |
+| Early stopping | O'Brien-Fleming (Lan-DeMets) | A rule written before the test, enforceable, protecting against *peeking* |
+| Bayesian read-out | Beta posteriors on **contribution** | Answers "what is my probability of being wrong if I switch?" |
+| Elasticity | Weighted log-log regression | Weights = inverse variance of `ln p` by the delta method |
 
-Deux points méritent d'être soulignés parce qu'ils sont souvent mal faits :
+Two points deserve emphasis because they are frequently done badly:
 
-**La frontière séquentielle porte sur la contribution, pas sur la conversion.** Protéger du peeking
-la statistique sur laquelle on ne décide pas n'a aucun sens. Le jeu de démonstration contient le cas
-qui le démontre : un écart de take-up statistiquement significatif (z = −3,92) mais économiquement
-neutre — intervalle sur la contribution [−1,76 ; +4,19] € par lead — où conclure sur la conversion
-aurait conduit à une décision que la contribution ne justifie pas.
+**The sequential boundary applies to contribution, not conversion.** Protecting against peeking on
+the statistic you do not decide on makes no sense. The demonstration portfolio contains the case that
+proves it: a statistically significant take-up gap (z = −3.92) that is economically neutral —
+contribution interval [−1.76 ; +4.19] € per lead — where concluding on conversion would have driven a
+decision contribution does not support.
 
-**Le prix optimal théorique est borné à l'enveloppe des prix testés.** La règle de Lerner
-`(p* − c)/p* = −1/e` extrapole une élasticité estimée sur quelques paliers à toute la courbe. GAAP
-calcule cette valeur, la signale comme extrapolation quand elle sort de l'enveloppe, et refuse de
-s'en servir seule. Sortir de l'enveloppe, c'est remplacer une mesure par une hypothèse de forme
-fonctionnelle.
+**The theoretical optimal price is bounded to the envelope of tested prices.** The Lerner rule
+`(p* − c)/p* = −1/e` extrapolates an elasticity estimated on a handful of steps to the whole curve.
+GAAP computes that value, flags it as extrapolation when it falls outside the envelope, and refuses
+to act on it alone. Leaving the envelope means replacing a measurement with a functional-form
+assumption.
 
-La note de méthode complète est accessible **dans l'application** (`/methode`) — une méthode qu'il
-faut aller chercher ailleurs n'est pas opposable.
+The full methodology note lives **inside the application** (`/methode`) — a method you have to go
+looking for elsewhere is not enforceable. A written version is in
+[`docs/METHODOLOGIE.md`](docs/METHODOLOGIE.md) (French).
 
 ---
 
-## Ce que GAAP ne mesure pas
+## What GAAP does not measure
 
-Cette section est aussi importante que les précédentes, et chaque recommandation la rappelle :
+This section matters as much as the previous ones, and every recommendation restates it:
 
-- La **réaction de la concurrence** à un changement de prix généralisé.
-- L'effet du prix sur la **valeur client à long terme** — multi-détention, attrition, refinancement.
-- La **saisonnalité** et les effets de nouveauté au-delà de la fenêtre du test.
-- Le comportement des clients **exclus par garde-fou**, par construction non observés.
-- La **perte réellement constatée** : seule la perte attendue à l'octroi entre dans le calcul. Toute
-  conclusion sur le mélange de risque doit être confirmée sur les cohortes à douze mois.
+- **Competitor reaction** to a generalised price change.
+- The effect of price on **long-term customer value** — cross-holding, attrition, refinancing.
+- **Seasonality** and novelty effects beyond the test window.
+- The behaviour of customers **excluded by a guardrail**, unobserved by construction.
+- **Realised loss**: only expected loss at origination enters the calculation. Any conclusion about
+  risk mix must be confirmed on twelve-month cohorts.
 
-L'anti-sélection est *détectée* — comparaison de la PD moyenne des dossiers acceptés entre
-cellules — mais la PD utilisée est celle du modèle de score au moment de l'offre. Elle anticipe la
-perte, elle ne la constate pas.
+Adverse selection is *detected* — by comparing mean PD of accepted applications across cells — but
+the PD used is the scoring model's at the time of offer. It anticipates loss; it does not observe it.
 
 ---
 
@@ -388,45 +391,43 @@ pip install -r requirements-dev.txt
 pytest                    # 162 tests, ~10 s
 ```
 
-La suite ne vérifie pas des comportements mais des **propriétés** : stabilité de l'affectation,
-uniformité du hachage, indépendance des flux aléatoires, cohérence du plancher et du RAROC,
-détection de falsification de la piste d'audit, refus des transitions de cycle de vie illégales.
+The suite checks **properties**, not behaviours: assignment stability, hash uniformity, independence
+of random streams, floor/RAROC coherence, detection of audit-trail tampering, refusal of illegal
+lifecycle transitions.
 
-Les valeurs statistiques de référence proviennent de tables publiées, pas d'une exécution antérieure
-du code : un test qui compare le code à lui-même ne vérifie rien.
+Statistical reference values come from published tables, not from an earlier run of this code: a test
+that compares code against itself verifies nothing.
 
-Un test épingle l'empreinte d'affectation de huit sujets. Il échoue si une modification du hachage
-déplace un sujet — c'est volontaire : changer la fonction d'affectation invalide silencieusement
-toute expérience en cours, et doit donc être un acte délibéré.
+One test pins the assignment fingerprint of eight subjects. It fails if a change to the hashing
+displaces a subject — deliberately: changing the assignment function silently invalidates every
+running experiment, and must therefore be a conscious act.
 
-Les captures d'écran de ce document sont régénérées par `python3 scripts/capture_screens.py` : une
-capture faite à la main devient fausse dès la première évolution de l'interface, et personne ne s'en
-aperçoit.
-
----
-
-## Données de démonstration
-
-**Toutes les données du portefeuille sont synthétiques.** Aucun client, aucun contrat, aucun encours
-réel. Les ordres de grandeur — taux de refinancement, PD, LGD, pondération de risque, take-up — sont
-choisis pour être plausibles sur un marché de crédit à la consommation européen ; ils ne constituent
-ni une référence de marché, ni une recommandation tarifaire.
-
-Le générateur est explicite et paramétré : demande à élasticité constante, plus un terme
-d'anti-sélection qui fait dépendre l'acceptation du risque du demandeur lorsque le prix s'écarte de
-la référence (`gaap/demo.py`).
+The screenshots in this document are regenerated by `python3 scripts/capture_screens.py`: a
+hand-made screenshot becomes wrong at the first interface change, and nobody notices.
 
 ---
 
-## Références
+## Demonstration data
+
+**Every figure in the portfolio is synthetic.** No customer, no contract, no real exposure. The
+orders of magnitude — funding rate, PD, LGD, risk weight, take-up — are chosen to be plausible in a
+European consumer-credit market; they constitute neither a market reference nor a pricing
+recommendation.
+
+The generator is explicit and parameterised: constant-elasticity demand, plus an adverse-selection
+term making acceptance depend on applicant risk as price departs from the reference (`gaap/demo.py`).
+
+---
+
+## References
 
 - Kohavi, Tang & Xu (2020), *Trustworthy Online Controlled Experiments*, Cambridge University Press
-- Wilson (1927), *JASA* 22(158) — intervalle de score
-- Newcombe (1998), *Statistics in Medicine* 17(8) — différence de proportions
-- O'Brien & Fleming (1979), *Biometrics* 35(3) ; Lan & DeMets (1983), *Biometrika* 70(3)
+- Wilson (1927), *JASA* 22(158) — score interval
+- Newcombe (1998), *Statistics in Medicine* 17(8) — difference between proportions
+- O'Brien & Fleming (1979), *Biometrics* 35(3); Lan & DeMets (1983), *Biometrika* 70(3)
 - Fleiss, Levin & Paik (2003), *Statistical Methods for Rates and Proportions*
 - Lerner (1934), *Review of Economic Studies* 1(3)
-- Comité de Bâle (2017), *Bâle III : finalisation des réformes* ; IFRS 9, *Instruments financiers*
+- Basel Committee (2017), *Basel III: Finalising post-crisis reforms*; IFRS 9, *Financial Instruments*
 
 ---
 
@@ -434,7 +435,7 @@ la référence (`gaap/demo.py`).
 
 **[DataOptimization.be](https://www.dataoptimization.be)**
 
-<sub>Conseil en data science appliquée à la finance — pricing, sensibilité au prix,<br>
-risque de crédit, architecture analytique.</sub>
+<sub>Data science consulting for financial services — pricing, price sensitivity,<br>
+credit risk, analytical architecture.</sub>
 
 </div>
