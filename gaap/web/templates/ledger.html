@@ -3,7 +3,7 @@
 {% block heading %}Piste d'audit{% endblock %}
 {% block lede %}
   Journal en ajout seul, scelle par chaînage d'empreintes SHA-256. Modifier ou supprimer une
-  entree ancienne invalide toutes les suivantes — et la verification le dit.
+  entree ancienne invalide toutes les suivantes, et la verification le dit.
 {% endblock %}
 {% block actions %}
   <span class="chip {{ 'success' if verification.intact else 'danger' }}">
@@ -31,7 +31,7 @@
   <div class="kpi">
     <div class="label">Affectations</div>
     <div class="value">rejouables</div>
-    <div class="note">fonction pure du sel — non journalisees, donc non divergentes</div>
+    <div class="note">fonction pure du sel, non journalisees donc non divergentes</div>
   </div>
 </div>
 

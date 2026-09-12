@@ -83,7 +83,7 @@ def build_portfolio() -> list[tuple[Experiment, dict]]:
     portfolio.append((
         Experiment(
             key="pp-taeg-2026q3",
-            name="Pret personnel 12 500 EUR - echelle de TAEG",
+            name="Pret personnel 12 500 EUR : echelle de TAEG",
             product="Pret personnel",
             hypothesis=(
                 "Le TAEG courant de 6,90 % est positionne sous le prix qui maximise la "
@@ -124,7 +124,7 @@ def build_portfolio() -> list[tuple[Experiment, dict]]:
     portfolio.append((
         Experiment(
             key="reno-frais-2026q3",
-            name="Credit renovation - frais de dossier",
+            name="Credit renovation : frais de dossier",
             product="Credit renovation energetique",
             hypothesis=(
                 "La suppression des frais de dossier (125 EUR) ameliore le take-up "
@@ -162,7 +162,7 @@ def build_portfolio() -> list[tuple[Experiment, dict]]:
     portfolio.append((
         Experiment(
             key="auto-taeg-2026q2",
-            name="Credit auto - palier 25 bps",
+            name="Credit auto : palier 25 bps",
             product="Credit auto",
             hypothesis=(
                 "Un palier de 25 bps est invisible pour le client sur un marche ou la "
@@ -200,7 +200,7 @@ def build_portfolio() -> list[tuple[Experiment, dict]]:
     portfolio.append((
         Experiment(
             key="auto-offensive-2026q4",
-            name="Credit auto - offre de conquete 3,90 %",
+            name="Credit auto : offre de conquete 3,90 %",
             product="Credit auto",
             hypothesis=(
                 "Un taux d'appel a 3,90 % sur les primo-accedants doit capter des parts "
@@ -236,7 +236,7 @@ def build_portfolio() -> list[tuple[Experiment, dict]]:
     portfolio.append((
         Experiment(
             key="pp-mensualite-2026q3",
-            name="Pret personnel - affichage mensualite",
+            name="Pret personnel : affichage mensualite",
             product="Pret personnel",
             hypothesis=(
                 "Presenter la mensualite avant le TAEG reduit la sensibilite au prix "

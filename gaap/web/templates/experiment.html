@@ -41,7 +41,7 @@
 
     {% if refuse %}
     <div class="verdict danger">
-      <div class="kicker">Plan refuse — {{ report.pre_launch.blocking | length }} garde-fou(s) bloquant(s)</div>
+      <div class="kicker">Plan refuse : {{ report.pre_launch.blocking | length }} garde-fou(s) bloquant(s)</div>
       <h2>Ce plan ne peut pas etre mis en production</h2>
       <ul>
         {% for check in report.pre_launch.blocking %}
@@ -59,7 +59,7 @@
     </div>
     {% else %}
     <div class="verdict {{ recommendation.verdict.tone }}">
-      <div class="kicker">Recommandation — {{ recommendation.verdict.label }}</div>
+      <div class="kicker">Recommandation : {{ recommendation.verdict.label }}</div>
       <h2>{{ recommendation.headline }}</h2>
       <ul>
         {% for line in recommendation.rationale %}<li>{{ line }}</li>{% endfor %}
@@ -140,17 +140,17 @@
                 </td>
                 <td class="n">{{ result.exposed | num }}</td>
                 <td class="n strong">{{ result.take_up | pct }}</td>
-                <td class="n">{{ result.take_up_ci[0] | pct(2) }} – {{ result.take_up_ci[1] | pct(2) }}</td>
+                <td class="n">[{{ result.take_up_ci[0] | pct(2) }} ; {{ result.take_up_ci[1] | pct(2) }}]</td>
                 <td class="n">{{ result.margin_bp | bp }}</td>
                 <td class="n">{{ result.raroc | pct(1) }}</td>
                 <td class="n strong">{{ result.rac_per_lead | dec }}</td>
-                <td class="n">{% if result.rac_test %}{{ result.rac_test.difference | dec }}{% else %}—{% endif %}</td>
+                <td class="n">{% if result.rac_test %}{{ result.rac_test.difference | dec }}{% else %}n/a{% endif %}</td>
                 <td class="n">
                   {% if result.rac_test %}{{ result.rac_test.t | dec }}
                     {% if result.boundary_crossed %}<span class="chip success">franchie</span>{% endif %}
-                  {% else %}—{% endif %}
+                  {% else %}n/a{% endif %}
                 </td>
-                <td class="n">{% if result.prob_beats_control is not none %}{{ (result.prob_beats_control * 100) | round(1) }} %{% else %}—{% endif %}</td>
+                <td class="n">{% if result.prob_beats_control is not none %}{{ (result.prob_beats_control * 100) | round(1) }} %{% else %}n/a{% endif %}</td>
                 <td class="n">
                   {{ result.mean_pd_converted | pct(2) }}
                   {% if result.adverse_selection %}<span class="chip warning">derive</span>{% endif %}
@@ -161,7 +161,7 @@
           <caption>
             La colonne <strong>EUR / lead</strong> est la metrique de decision : contribution ajustee
             du risque par lead expose. Les colonnes <strong>t</strong> et <strong>P(rapporte +)</strong>
-            portent sur cette contribution, jamais sur le taux de conversion — c'est aussi sur elle
+            portent sur cette contribution, jamais sur le taux de conversion, et c'est aussi sur elle
             que porte la frontiere sequentielle. Une cellule peut convertir moins et rapporter plus.
           </caption>
         </table>
@@ -188,7 +188,7 @@
         <h2>Suivi sequentiel</h2>
         <span class="hint">
           La frontiere d'arret de type O'Brien-Fleming est fixee avant le lancement. Tant que la
-          statistique reste dessous, il n'y a rien a decider — c'est ce qui protege du peeking.
+          statistique reste dessous, il n'y a rien a decider, et c'est ce qui protege du peeking.
         </span>
       </header>
       {{ sequential }}
@@ -204,7 +204,7 @@
                 <td class="muted">{{ analysis.elasticity.method }}</td></tr>
             {% if analysis.elasticity.points > 2 %}
             <tr><td>Intervalle de confiance</td>
-                <td class="n">{{ analysis.elasticity.ci_low | dec }} – {{ analysis.elasticity.ci_high | dec }}</td>
+                <td class="n">[{{ analysis.elasticity.ci_low | dec }} ; {{ analysis.elasticity.ci_high | dec }}]</td>
                 <td class="muted">erreur-type {{ analysis.elasticity.std_error | dec }} · R2 {{ analysis.elasticity.r_squared | dec }} · {{ analysis.elasticity.points }} points</td></tr>
             {% endif %}
             <tr><td>Regime de demande</td>
@@ -228,7 +228,7 @@
                   {% if analysis.elasticity.optimal_is_extrapolated %}
                     <span class="chip warning">extrapolation</span>
                     hors de l'enveloppe testee [{{ analysis.elasticity.tested_range[0] | pct }} ;
-                    {{ analysis.elasticity.tested_range[1] | pct }}] — hypothese de modele, pas une mesure.
+                    {{ analysis.elasticity.tested_range[1] | pct }}] : hypothese de modele, pas une mesure.
                   {% else %}
                     a l'interieur de l'enveloppe testee : la valeur est soutenue par des observations.
                   {% endif %}
@@ -291,14 +291,14 @@
     </div>
 
     <div class="card">
-      <header><h3>Garde-fous — avant lancement</h3></header>
+      <header><h3>Garde-fous : avant lancement</h3></header>
       {% with checks = report.pre_launch.checks %}
         {% include "partials/_checks.html" %}
       {% endwith %}
     </div>
 
     <div class="card">
-      <header><h3>Garde-fous — en production</h3></header>
+      <header><h3>Garde-fous : en production</h3></header>
       {% with checks = report.runtime.checks %}
         {% include "partials/_checks.html" %}
       {% endwith %}
@@ -310,8 +310,8 @@
         <tbody>
           <tr><td>Cle</td><td class="n">{{ experiment.key }}</td></tr>
           <tr><td>Sel d'affectation</td><td class="n">{{ experiment.salt }}</td></tr>
-          <tr><td>Conçu par</td><td class="n">{{ experiment.created_by or '—' }}</td></tr>
-          <tr><td>Valide par</td><td class="n">{{ experiment.approved_by or '—' }}</td></tr>
+          <tr><td>Conçu par</td><td class="n">{{ experiment.created_by or 'n/c' }}</td></tr>
+          <tr><td>Valide par</td><td class="n">{{ experiment.approved_by or 'n/c' }}</td></tr>
           <tr><td>Active le</td><td class="n">{{ experiment.activated_at | when }}</td></tr>
         </tbody>
       </table>

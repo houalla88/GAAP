@@ -68,7 +68,7 @@
         set("required_per_cell", data.required_per_cell.toLocaleString("fr-BE"));
         set("available_per_cell", data.available_per_cell.toLocaleString("fr-BE"));
         set("detectable_effect",
-          data.detectable_effect === null ? "—" : french(data.detectable_effect * 100, 1) + " %");
+          data.detectable_effect === null ? "n/a" : french(data.detectable_effect * 100, 1) + " %");
         if (data.sufficient === null) {
           set("verdict", "volume non renseigne");
         } else if (data.sufficient) {

@@ -18,7 +18,7 @@
 <div class="formula">u = uint64( SHA-256( sel ‖ espace ‖ identifiant )[0:8] ) / 2^64</div>
 <p>
   Deux espaces de nommage independants sont utilises : l'un decide de l'appartenance au temoin
-  preserve, l'autre de la cellule. Les melanger correlerait le temoin au prix — un biais qui
+  preserve, l'autre de la cellule. Les melanger correlerait le temoin au prix, un biais qui
   ne se voit dans aucun total.
 </p>
 <p>Trois consequences : l'offre est stable pour un meme client, toute affectation passee est
@@ -55,7 +55,7 @@
 <h2>4. Inference</h2>
 <ul>
   <li><strong>Intervalles sur une proportion</strong> : score de Wilson (1927), conserve sa
-    couverture aux faibles taux — le regime usuel d'un take-up de credit.</li>
+    couverture aux faibles taux, le regime usuel d'un take-up de credit.</li>
   <li><strong>Ecart entre deux proportions</strong> : methode hybride de Newcombe (1998,
     methode 10), construite sur les bornes de Wilson.</li>
   <li><strong>Metrique continue</strong> : test t de Welch. La variance de la contribution depend
@@ -90,7 +90,7 @@
 <p>
   A chaque cellule, GAAP compare la PD moyenne des dossiers <em>acceptes</em> a celle du
   controle (test de Welch). Une hausse significative lorsque le prix monte signale que la marge
-  supplementaire est partiellement compensee par une degradation du melange de risque — c'est
+  supplementaire est partiellement compensee par une degradation du melange de risque, et c'est
   le mecanisme d'anti-selection, invisible d'un test de conversion.
 </p>
 <p>
@@ -111,15 +111,15 @@
 <h2>8. References</h2>
 <ul>
   <li>Kohavi, Tang &amp; Xu (2020), <em>Trustworthy Online Controlled Experiments</em>, Cambridge
-    University Press — SRM, peeking, hierarchie des metriques.</li>
-  <li>Wilson (1927), <em>Journal of the American Statistical Association</em> 22(158) — intervalle de score.</li>
-  <li>Newcombe (1998), <em>Statistics in Medicine</em> 17(8) — intervalle sur une difference de proportions.</li>
+    University Press : SRM, peeking, hierarchie des metriques.</li>
+  <li>Wilson (1927), <em>Journal of the American Statistical Association</em> 22(158) : intervalle de score.</li>
+  <li>Newcombe (1998), <em>Statistics in Medicine</em> 17(8) : intervalle sur une difference de proportions.</li>
   <li>O'Brien &amp; Fleming (1979), <em>Biometrics</em> 35(3) ; Lan &amp; DeMets (1983),
-    <em>Biometrika</em> 70(3) — frontieres d'arret sequentielles.</li>
-  <li>Fleiss, Levin &amp; Paik (2003), <em>Statistical Methods for Rates and Proportions</em> — dimensionnement.</li>
-  <li>Lerner (1934), <em>Review of Economic Studies</em> 1(3) — indice de pouvoir de marche.</li>
-  <li>Comite de Bale (2017), <em>Bale III : finalisation des reformes</em> — ponderations de risque, exigences de fonds propres.</li>
-  <li>IFRS 9, <em>Instruments financiers</em> — pertes de credit attendues.</li>
+    <em>Biometrika</em> 70(3) : frontieres d'arret sequentielles.</li>
+  <li>Fleiss, Levin &amp; Paik (2003), <em>Statistical Methods for Rates and Proportions</em> : dimensionnement.</li>
+  <li>Lerner (1934), <em>Review of Economic Studies</em> 1(3) : indice de pouvoir de marche.</li>
+  <li>Comite de Bale (2017), <em>Bale III : finalisation des reformes</em> : ponderations de risque, exigences de fonds propres.</li>
+  <li>IFRS 9, <em>Instruments financiers</em> : pertes de credit attendues.</li>
 </ul>
 
 <p class="caption">
