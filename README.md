@@ -4,7 +4,7 @@
 
 **G**overnance · **A**rbitrage · **A**udit · **P**rice
 
-*Price can be tested like anything else. It cannot be decided like anything else.*
+*Price elasticity is not in your historical data. It is in an experiment.*
 
 [![Tests](https://img.shields.io/badge/tests-162%20passing-09806c)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-09806c)](pyproject.toml)
@@ -17,28 +17,42 @@
 
 ---
 
-## The price that converts best is almost always the one that destroys the most value
+## What it does
 
-That single sentence is the reason this engine exists.
+**GAAP tests prices in production.** Several tariffs served in parallel to comparable populations,
+randomly assigned, with the decision rule written down before the first customer sees an offer — and
+a verdict expressed in euros of risk-adjusted margin.
 
-Point a conventional A/B testing tool at a tariff and it will pick the cheapest cell. It converts
-better — mechanically. In the demonstration portfolio below, that cell converts at **7.87 %** and
-returns **€10.25 per exposed lead**. The cell that converts half as often, at 4.04 %, returns
-**€21.65**. This is not an optimisation detail: it is a doubling of margin, on the same population,
-on a decision that conversion rate gets backwards.
+## Why test rather than model
 
-**GAAP decides on risk-adjusted contribution, and can explain why.** Behind that sentence: a
-profitability floor rebuilt component by component (funding, operating costs, PD × LGD, regulatory
-capital charge), an O'Brien-Fleming sequential stopping boundary placed on margin rather than on
-conversion, adverse-selection detection — because a rising price selects the applicants with the
-fewest alternatives — and a hash-chained audit trail. The statistical engine carries no numerical
-dependency: the χ², Student and inverse-normal distributions are implemented in it and checked
-against published reference values, so that an internal control function can read the formula that
-was actually applied.
+Because your historical data cannot answer the question.
 
-And every recommendation it issues carries its own caveats: extrapolation beyond the envelope of
-tested prices, origination PD that is not realised loss, effect measured over the test window alone.
-A pricing recommendation delivered without its limits is an incomplete recommendation.
+You can build the elasticity model and fit it on three years of history. It will return a number, and
+that number will be wrong in a way no goodness-of-fit statistic reveals. Price was never set at
+random in your history: it moved with the competitive landscape, risk appetite, the marketing
+calendar, the funding curve — the very forces that also moved demand. The estimate therefore mixes
+the effect of price with the effect of everything that made price change. This is the identification
+problem of demand estimation, and adding controls does not solve it, because the confounders that
+matter are the ones nobody recorded.
+
+Randomised assignment severs that link. It is the only design that makes the measured effect causal,
+and it is inexpensive next to the alternative — discovering after a repricing that the true
+elasticity was twice what the model claimed.
+
+## Why speed is the point
+
+Every week at the wrong price is margin nobody recovers, and every week of testing is margin
+deliberately spent. So the loop has to close as early as the evidence allows, not at the end of a
+calendar quarter: a sequential stopping boundary fixed before launch, a Bayesian read-out expressed
+in euros per lead, and a lab that tells you — before a single euro is committed — whether the plan
+can conclude at all and what the learning will cost at the 95th percentile.
+
+Going fast is only defensible if the downside is bounded. That is what the guardrails are for: no
+cell below the profitability floor, a cap on exposed traffic, a loss tolerance per cell fixed before
+any result is seen, and an audit trail that makes the price served to a given customer eighteen
+months ago replayable from the salt alone.
+
+**Test, conclude, reprice — and be able to explain the decision afterwards.**
 
 ![GAAP cockpit](docs/assets/01-cockpit.png)
 
@@ -46,6 +60,21 @@ A pricing recommendation delivered without its limits is an incomplete recommend
 
 > The interface ships in French. It was built for a Belgian consumer-credit context, and the
 > screenshots are the real application, not mock-ups.
+
+---
+
+### One thing the engine refuses to get wrong
+
+The best-converting price is the lowest admissible one, and it frequently destroys value. In the
+portfolio above, the −45 bps cell converts at **7.87 %** and returns **€10.25 per exposed lead**; the
++90 bps cell converts at 4.04 % and returns **€21.65**. Same population, double the margin, on a
+decision that conversion rate gets backwards.
+
+GAAP therefore decides on risk-adjusted contribution — take-up × (rate − profitability floor) ×
+principal × duration — and writes that trade-off into its rationale rather than hiding it. And every
+recommendation carries its own caveats: extrapolation beyond the envelope of tested prices,
+origination PD that is not realised loss, effect measured over the test window alone. A pricing
+recommendation delivered without its limits is an incomplete recommendation.
 
 ---
 
@@ -427,6 +456,10 @@ term making acceptance depend on applicant risk as price departs from the refere
 - O'Brien & Fleming (1979), *Biometrics* 35(3); Lan & DeMets (1983), *Biometrika* 70(3)
 - Fleiss, Levin & Paik (2003), *Statistical Methods for Rates and Proportions*
 - Lerner (1934), *Review of Economic Studies* 1(3)
+- Working (1927), *Quarterly Journal of Economics* 41(2) — "What do statistical demand curves show?",
+  the founding paper on the identification problem in demand estimation
+- Angrist & Pischke (2009), *Mostly Harmless Econometrics*, Princeton University Press — why random
+  assignment identifies a causal effect that observational data cannot
 - Basel Committee (2017), *Basel III: Finalising post-crisis reforms*; IFRS 9, *Financial Instruments*
 
 ---

@@ -4,7 +4,7 @@
 
 **G**ouvernance, **A**rbitrage et **A**udit du **P**rix
 
-*Le prix se teste comme le reste. Il ne se décide pas comme le reste.*
+*L'élasticité-prix n'est pas dans votre historique. Elle est dans une expérience.*
 
 [![Tests](https://img.shields.io/badge/tests-162%20passants-09806c)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-09806c)](pyproject.toml)
@@ -17,32 +17,63 @@
 
 ---
 
-## Le prix qui convertit le mieux est presque toujours celui qui détruit le plus de valeur
+## Ce que fait l'outil
 
-C'est toute la raison d'être de ce moteur.
+**GAAP teste des prix en production.** Plusieurs tarifs servis en parallèle à des populations
+comparables, affectées aléatoirement, avec la règle de décision écrite avant que le premier client
+ne voie une offre — et un verdict exprimé en euros de marge ajustée du risque.
 
-Branchez un outil d'A/B testing classique sur un tarif : il désignera la cellule la moins chère.
-Elle convertit mieux — c'est mécanique. Sur le jeu de démonstration ci-dessous, cette cellule
-convertit à **7,87 %** et rapporte **10,25 € par lead exposé**. Celle qui convertit deux fois moins,
-à 4,04 %, en rapporte **21,65 €**. L'écart n'est pas un détail d'optimisation : c'est un doublement
-de la marge, sur la même population, pour une décision que le taux de conversion prend à l'envers.
+## Pourquoi tester plutôt que modéliser
 
-**GAAP tranche sur la contribution ajustée du risque, et sait expliquer pourquoi.** Derrière cette
-phrase : un plancher de rentabilité reconstitué poste par poste (refinancement, coûts opérationnels,
-PD × LGD, charge en capital réglementaire), une frontière d'arrêt séquentielle O'Brien-Fleming posée
-sur la marge et non sur la conversion, une détection d'anti-sélection — parce qu'un prix qui monte
-sélectionne les demandeurs qui ont le moins d'alternatives — et une piste d'audit scellée par
-chaînage d'empreintes. Le moteur statistique n'utilise aucune dépendance numérique : les lois du χ²,
-de Student et la normale inverse y sont implémentées et vérifiées contre des valeurs publiées, pour
-qu'un contrôle interne puisse relire la formule appliquée.
+Parce que votre historique ne peut pas répondre à la question.
 
-Et chaque recommandation qu'il produit porte ses réserves : extrapolation hors de l'enveloppe des
-prix testés, PD d'octroi qui n'est pas la perte constatée, effet mesuré sur la seule fenêtre du
-test. Une recommandation tarifaire livrée sans ses limites est une recommandation incomplète.
+Vous pouvez construire le modèle d'élasticité et l'ajuster sur trois ans de données. Il sortira un
+chiffre, et ce chiffre sera faux d'une manière qu'aucune statistique d'ajustement ne révèle. Dans
+votre historique, le prix n'a jamais été fixé au hasard : il a bougé avec la concurrence, l'appétit
+au risque, le calendrier marketing, la courbe de refinancement — exactement les forces qui ont fait
+bouger la demande. L'estimation mélange donc l'effet du prix et l'effet de ce qui a fait changer le
+prix. C'est le problème d'identification de l'estimation de la demande, et ajouter des variables de
+contrôle ne le résout pas : les facteurs confondants qui comptent sont ceux que personne n'a
+enregistrés.
+
+L'affectation aléatoire coupe ce lien. C'est le seul plan qui rende causal l'effet mesuré, et il
+coûte peu au regard de l'alternative — découvrir après un repositionnement tarifaire que
+l'élasticité réelle valait le double de celle du modèle.
+
+## Pourquoi la vitesse est l'enjeu
+
+Chaque semaine au mauvais prix est de la marge que personne ne récupère, et chaque semaine de test
+est de la marge dépensée volontairement. La boucle doit donc se fermer dès que les données le
+permettent, pas à la fin d'un trimestre : frontière d'arrêt séquentielle fixée avant le lancement,
+lecture bayésienne exprimée en euros par lead, et un laboratoire qui dit — avant le premier euro
+engagé — si le plan est seulement capable de conclure et ce que l'apprentissage coûtera au
+95e centile.
+
+Aller vite n'est défendable que si la perte est bornée. C'est le rôle des garde-fous : aucune cellule
+sous le plancher de rentabilité, un plafond sur le trafic exposé, une tolérance de perte par cellule
+fixée avant tout résultat, et une piste d'audit qui rend rejouable, à partir du seul sel, le prix
+servi à un client donné il y a dix-huit mois.
+
+**Tester, conclure, repositionner le prix — et savoir justifier la décision après coup.**
 
 ![Cockpit GAAP](docs/assets/01-cockpit.png)
 
 <div align="center"><sub>Le cockpit : le portefeuille d'expériences, trié par ce qui appelle une décision.</sub></div>
+
+---
+
+### Ce que le moteur refuse de rater
+
+Le prix qui convertit le mieux est le plus bas admissible, et il détruit souvent de la valeur. Dans
+le portefeuille ci-dessus, la cellule à −45 bps convertit à **7,87 %** et rapporte **10,25 € par lead
+exposé** ; celle à +90 bps convertit à 4,04 % et rapporte **21,65 €**. Même population, marge
+doublée, pour une décision que le taux de conversion prend à l'envers.
+
+GAAP tranche donc sur la contribution ajustée du risque — take-up × (taux − plancher de rentabilité)
+× capital × durée — et écrit cet arbitrage dans sa motivation au lieu de le masquer. Et chaque
+recommandation porte ses réserves : extrapolation hors de l'enveloppe des prix testés, PD d'octroi
+qui n'est pas la perte constatée, effet mesuré sur la seule fenêtre du test. Une recommandation
+tarifaire livrée sans ses limites est une recommandation incomplète.
 
 ---
 
@@ -428,6 +459,10 @@ la référence (`gaap/demo.py`).
 - O'Brien & Fleming (1979), *Biometrics* 35(3) ; Lan & DeMets (1983), *Biometrika* 70(3)
 - Fleiss, Levin & Paik (2003), *Statistical Methods for Rates and Proportions*
 - Lerner (1934), *Review of Economic Studies* 1(3)
+- Working (1927), *Quarterly Journal of Economics* 41(2) — « What do statistical demand curves
+  show ? », l'article fondateur sur le problème d'identification de la demande
+- Angrist & Pischke (2009), *Mostly Harmless Econometrics*, Princeton University Press — pourquoi
+  l'assignation aléatoire identifie un effet causal que l'observationnel ne peut pas identifier
 - Comité de Bâle (2017), *Bâle III : finalisation des réformes* ; IFRS 9, *Instruments financiers*
 
 ---
